@@ -149,7 +149,7 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
   +"#help div{background:#fff;color:#0b1f3a;border-radius:16px;max-width:520px;width:100%;padding:20px 22px;font-family:var(--font);max-height:90vh;overflow:auto}#help h2{margin:0 0 10px;font-size:18px}#help table{width:100%;border-collapse:collapse;font-size:14px}#help td{padding:6px 4px;border-top:1px solid #e3eaf4}#help td:first-child{white-space:nowrap;font-weight:900;color:#1b75bb;width:120px}#help button{margin-top:14px;border:0;border-radius:10px;padding:10px 16px;font-weight:800;background:#ff7a18;color:#1a1206;cursor:pointer;font-family:var(--font)}";
   document.head.appendChild(st);
   /* 1. remember last report (restore before first show) */
-  if(!location.hash){var lk=ls("hub.last");if(lk&&NAMES[lk]){try{history.replaceState(null,"","#"+lk)}catch(e){}}}
+  if(!location.hash){var lk=(ls("hub.open")&&ls("hub.open")!=="last")?ls("hub.open"):ls("hub.last");if(lk&&NAMES[lk]){try{history.replaceState(null,"","#"+lk)}catch(e){}}}
   var _s=show;show=function(k){_s(k);ls("hub.last",curK);var h=$("f-"+curK);if(h)try{h.contentWindow.scrollTo(0,0)}catch(e){}};
   /* 2. zoom */
   var Z=parseFloat(ls("hub.zoom"))||1;
@@ -220,8 +220,8 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
     var co=T(d.querySelector(".co")).replace(/\s*\|\s*/g," | "),h1=T(d.querySelector("h1")),dt=rdate(d);
     var L=["*"+(co||"SEAPORT LINES INDIA PVT LTD")+"*","*"+h1+"*"+(dt?" - "+dt:"")];
     ks.forEach(function(k){var a=T(k.querySelector("small")),b=T(k.querySelector(".big")),r=T(k.querySelector(".rs")),l=T(k.querySelector(".dl"));if(!a||!b)return;L.push("- "+a.replace(/\b\w/g,function(c){return c})+": "+b+(r&&r!==b?" ("+r+")":"")+(l?" | "+l:""))});
-    var net=d.querySelector(".net");if(net)L.push("",(net.innerText||T(net)).replace(/\s*\n\s*/g," | ").trim());
-    return{text:L.join("\n"),title:h1,date:dt}}
+    var nt=window.__hubNote&&window.__hubNote();var net=d.querySelector(".net");if(net)L.push("",(net.innerText||T(net)).replace(/\s*\n\s*/g," | ").trim());
+    if(nt)L.push("","Remarks: "+nt);return{text:L.join("\n"),title:h1,date:dt}}
   function noSum(){say("Summary text is available for the financial, FN Payable and Ageing reports.")}
   function copy(t,ok){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){say(ok)},function(){fb()})}else fb();function fb(){var a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();try{document.execCommand("copy");say(ok)}catch(e){say("Could not copy. Select and copy manually.")}a.remove()}}
   function doCopy(){var s=summary();if(!s){noSum();return}copy(s.text,"Summary copied. Paste it in WhatsApp.")}
@@ -247,7 +247,7 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
   function removePin(){if(!ls("hub.pin")){say("No PIN is set.");return}var a=prompt("Enter your PIN to remove it:");if(a===null)return;hash(a).then(function(h){if(h===ls("hub.pin")){ls("hub.pin",null);say("PIN removed.")}else say("Wrong PIN. It was not removed.")})}
   function doLock(){if(!ls("hub.pin"))setPin();else lockNow()}
   $("lockbtn").addEventListener("click",function(e){if(e.shiftKey)removePin();else doLock()});
-  var it;function idle(){clearTimeout(it);if(ls("hub.pin"))it=setTimeout(lockNow,10*60*1000)}
+  var it;function idle(){clearTimeout(it);var m=ls("hub.idle")===null?10:+ls("hub.idle");if(ls("hub.pin")&&m>0)it=setTimeout(lockNow,m*60*1000)}
   ["mousemove","keydown","touchstart","click","scroll"].forEach(function(ev){window.addEventListener(ev,function(){if(!lk.classList.contains("on"))idle()},{passive:true})});
   if(ls("hub.pin")){lockNow();}
   /* 5. quick search */
@@ -329,6 +329,114 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
   var bar=document.querySelector(".bar");bar.insertBefore(tools,document.querySelector(".acts"));var fp=$("fresh");if(fp)tools.insertBefore(fp,tools.firstChild);
   document.addEventListener("click",function(e){if(!e.target.closest(".tm"))closeAll()});
   /* freshness pill goes under the title row for a cleaner look */
+})();
+
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var NAMES={daily:"Daily Tonnage",monthly:"Monthly Tonnage",yearly:"Yearly Tonnage",financial:"Financial Report - Air",lines:"Financial Report - Lines",fnpay:"FN Payable Plan",ageing:"Customer Ageing"};
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
+  function on(k,def){var v=ls(k);return v===null?def:v==="1"}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function fdoc(){try{return $("f-"+curK).contentDocument}catch(e){return null}}
+  function rdate(d){if(!d)return"";var ids=["iDate","date","iRemit","iAsOn","rdate","sDate"];for(var i=0;i<ids.length;i++){var e=d.getElementById(ids[i]);if(!e)continue;var v=(e.value!=null&&e.value!==""?e.value:e.textContent)||"";var m=v.match(/\d{2}-\d{2}-\d{4}/);if(m)return m[0]}return""}
+  /* ---------- styles ---------- */
+  var st=document.createElement("style");st.textContent=
+  "#msg{display:none!important}"
+  +"#toast{position:fixed;left:50%;bottom:48px;transform:translate(-50%,20px);z-index:90;background:#0b1f3a;color:#fff;border:1px solid #3a5688;border-left:4px solid var(--accent);border-radius:10px;padding:11px 16px;font:600 13.5px var(--font);max-width:min(92vw,560px);box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}#toast.on{opacity:1;transform:translate(-50%,0)}"
+  +"#sbar{position:fixed;left:0;right:0;bottom:0;z-index:25;height:30px;background:#071a33;border-top:1px solid #1f3a63;color:#9db8e3;font:600 12px var(--font);display:flex;align-items:center;gap:18px;padding:0 14px;overflow:hidden;white-space:nowrap}#sbar b{color:#fff;font-weight:700}#sbar .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2ecc71;margin-right:6px}#sbar .dot.off{background:#e74c3c}#sbar .sp{margin-left:auto}body.sb{padding-bottom:34px}body.sb #toTop{bottom:46px!important}"
+  +".dlg{position:fixed;inset:0;z-index:70;background:rgba(7,26,51,.7);display:none;align-items:center;justify-content:center;padding:14px;font-family:var(--font)}.dlg.on{display:flex}"
+  +".dlg>div{background:#fff;color:#0b1f3a;border-radius:16px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}"
+  +".dlg header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e3eaf4}.dlg header h2{margin:0;font-size:17px}.dlg header button{border:0;background:#eef3fa;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#0b1f3a}"
+  +".dlg .bd{padding:14px 20px;overflow:auto}.dlg .ft{padding:12px 20px;border-top:1px solid #e3eaf4;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}"
+  +".dlg .row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid #eef3fa;font-size:14px}.dlg .row:last-child{border-bottom:0}.dlg .row small{display:block;color:#6b7a90;font-weight:500;margin-top:2px;font-size:12px}"
+  +".dlg select,.dlg textarea{font:600 14px var(--font);border:1px solid #c9d6ea;border-radius:8px;padding:8px 10px;color:#0b1f3a;background:#fff}.dlg textarea{width:100%;min-height:110px;resize:vertical;font-weight:500}"
+  +".dlg .btn{border:0;border-radius:9px;padding:10px 16px;font:800 13px var(--font);cursor:pointer;background:var(--accent);color:var(--accent-ink)}.dlg .btn.g{background:#eef3fa;color:#0b1f3a}"
+  +".dlg input[type=checkbox]{width:20px;height:20px;accent-color:#1b75bb}.sw{display:flex;gap:8px}.sw button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #c9d6ea;cursor:pointer}.sw button.on{box-shadow:0 0 0 3px #0b1f3a}"
+  +".dlg table{width:100%;border-collapse:collapse;font-size:13px}.dlg td,.dlg th{padding:7px 6px;border-bottom:1px solid #eef3fa;text-align:left}.dlg th{font-size:11px;letter-spacing:.08em;color:#6b7a90}"
+  +".dlg label.ck{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #eef3fa;font-weight:600;font-size:14px;cursor:pointer}"
+  +"body.compact .bar{padding:6px 14px;gap:8px}body.compact .tabs button{padding:7px 12px;font-size:13px}body.compact .tbtn{padding:6px 10px;font-size:12.5px}body.compact .tools{padding-top:6px}";
+  document.head.appendChild(st);
+  /* ---------- toast ---------- */
+  var ts=document.createElement("div");ts.id="toast";ts.setAttribute("role","status");ts.setAttribute("aria-live","polite");document.body.appendChild(ts);
+  var tt;function toast(t){if(!t)return;ts.textContent=t;ts.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){ts.classList.remove("on")},4200)}
+  new MutationObserver(function(){toast($("msg").textContent)}).observe($("msg"),{childList:true,characterData:true,subtree:true});
+  /* ---------- dialog builder ---------- */
+  function dialog(id,title,body,foot){var o=document.createElement("div");o.className="dlg";o.id=id;o.setAttribute("role","dialog");o.setAttribute("aria-label",title);
+    o.innerHTML='<div><header><h2>'+title+'</h2><button type="button" aria-label="Close">&times;</button></header><div class="bd"></div><div class="ft"></div></div>';
+    document.body.appendChild(o);var api={el:o,bd:o.querySelector(".bd"),ft:o.querySelector(".ft"),open:function(){if(api.onopen)api.onopen();o.classList.add("on")},close:function(){o.classList.remove("on")}};
+    o.querySelector("header button").addEventListener("click",api.close);o.addEventListener("click",function(e){if(e.target===o)api.close()});
+    document.addEventListener("keydown",function(e){if(e.key==="Escape"&&o.classList.contains("on"))api.close()});return api}
+  /* ---------- activity log ---------- */
+  var ACT={dlimg:"Downloaded image (portrait)",dlland:"Downloaded image (landscape)",shimg:"Shared image (portrait)",shland:"Shared image (landscape)",cpsum:"Copied summary text",mlsum:"Opened email summary",prnow:"Printed report",bkup:"Backup saved",rstor:"Restore started"};
+  function logs(){try{return JSON.parse(ls("hub.log")||"[]")}catch(e){return[]}}
+  function addLog(a){var L=logs();L.unshift({t:new Date().toISOString(),r:NAMES[curK]||curK,d:rdate(fdoc()),a:a});ls("hub.log",JSON.stringify(L.slice(0,200)))}
+  /* ---------- protective confirmation before sharing ---------- */
+  var GATED="shimg,shland,dlimg,dlland,cpsum,mlsum".split(",");
+  function chkKey(){return"hub.chk."+curK+"."+rdate(fdoc())}
+  var CHK=["Report date is correct","Totals agree with the source sheet","Management alerts reviewed","Approved for sharing"];
+  function chkState(){try{return JSON.parse(ls(chkKey())||"[]")}catch(e){return[]}}
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("button");if(!b||!ACT[b.id])return;
+    if(window.__bypass){window.__bypass=false;addLog(ACT[b.id]);return}
+    if(GATED.indexOf(b.id)<0){addLog(ACT[b.id]);return}
+    var msgs=[],fr=$("fresh");
+    if(on("hub.cstale",true)&&fr&&/warn|old/.test(fr.className))msgs.push("- "+fr.textContent+".");
+    if(on("hub.cchk",false)&&fr&&fr.className&&chkState().length<CHK.length)msgs.push("- The pre-send checklist is not fully ticked (open Remarks).");
+    if(msgs.length&&!confirm("Please check before you continue:\n\n"+msgs.join("\n")+"\n\nContinue anyway?")){e.stopImmediatePropagation();e.preventDefault();return}
+    addLog(ACT[b.id])},true);
+  /* ---------- remarks + checklist ---------- */
+  var rm=dialog("rmdlg","Remarks and checklist");
+  function noteKey(){return"hub.note."+curK+"."+rdate(fdoc())}
+  window.__hubNote=function(){return on("hub.incnote",true)?(ls(noteKey())||"").trim():""};
+  rm.onopen=function(){var d=rdate(fdoc()),cs=chkState();
+    rm.bd.innerHTML='<p style="margin:0 0 10px;color:#6b7a90;font-size:13px"><b style="color:#0b1f3a">'+esc(NAMES[curK]||curK)+"</b>"+(d?" | "+d:" | no report date")+"</p><h4 style=\"margin:8px 0 2px;font-size:11px;letter-spacing:.1em;color:#6b7a90\">PRE-SEND CHECKLIST</h4>"+CHK.map(function(c,i){return'<label class="ck"><input type="checkbox" data-i="'+i+'"'+(cs.indexOf(i)>=0?" checked":"")+"> "+c+"</label>"}).join("")+'<h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.1em;color:#6b7a90">REMARKS (added to the copied summary)</h4><textarea id="rmtxt" placeholder="Example: Large export receipt expected on Thursday."></textarea>';
+    $("rmtxt").value=ls(noteKey())||"";
+    rm.bd.querySelectorAll("input[type=checkbox]").forEach(function(c){c.addEventListener("change",function(){var a=[];rm.bd.querySelectorAll("input[type=checkbox]").forEach(function(x,i){if(x.checked)a.push(i)});ls(chkKey(),JSON.stringify(a))})});
+    $("rmtxt").addEventListener("input",function(){ls(noteKey(),$("rmtxt").value)})};
+  rm.ft.innerHTML='<button type="button" class="btn g" id="rmclr">Clear remarks</button><button type="button" class="btn" id="rmok">Done</button>';
+  $("rmok").addEventListener("click",function(){rm.close();toast("Saved for this report and date.")});$("rmclr").addEventListener("click",function(){ls(noteKey(),null);$("rmtxt").value=""});
+  /* ---------- activity dialog ---------- */
+  var ac=dialog("acdlg","Activity log");
+  ac.onopen=function(){var L=logs();ac.bd.innerHTML=L.length?'<table><thead><tr><th>TIME</th><th>REPORT</th><th>ACTION</th></tr></thead><tbody>'+L.slice(0,60).map(function(x){var d=new Date(x.t);return"<tr><td>"+esc(d.toLocaleDateString("en-GB")+" "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}))+"</td><td>"+esc(x.r)+(x.d?" <small style=\"color:#6b7a90\">"+esc(x.d)+"</small>":"")+"</td><td>"+esc(x.a)+"</td></tr>"}).join("")+"</tbody></table>":'<p style="color:#6b7a90">Nothing recorded yet. Downloads, shares, prints and backups appear here.</p>'};
+  ac.ft.innerHTML='<button type="button" class="btn g" id="acclr">Clear log</button><button type="button" class="btn g" id="accsv">Download CSV</button><button type="button" class="btn" id="acok">Close</button>';
+  $("acok").addEventListener("click",ac.close);$("acclr").addEventListener("click",function(){if(confirm("Clear the activity log?")){ls("hub.log",null);ac.onopen()}});
+  $("accsv").addEventListener("click",function(){var L=logs();if(!L.length){toast("Nothing to export yet.");return}var csv="Time,Report,Report date,Action\n"+L.map(function(x){return[x.t,x.r,x.d,x.a].map(function(v){return'"'+String(v||"").replace(/"/g,'""')+'"'}).join(",")}).join("\n");var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="SEAPOL_Activity_Log.csv";document.body.appendChild(a);a.click();a.remove()});
+  /* ---------- settings ---------- */
+  var ACC={Orange:["#ff7a18","#1a1206"],Blue:["#2e8bff","#ffffff"],Green:["#1fa855","#ffffff"],Purple:["#8a5cf5","#ffffff"],Red:["#e04545","#ffffff"]};
+  function applyPrefs(){var a=ACC[ls("hub.accent")||"Orange"]||ACC.Orange;var r=document.documentElement.style;r.setProperty("--accent",a[0]);r.setProperty("--accent-ink",a[1]);
+    document.body.classList.toggle("compact",on("hub.compact",false));document.body.classList.toggle("sb",on("hub.sbar",true));sbar.style.display=on("hub.sbar",true)?"flex":"none"}
+  var se=dialog("sedlg","Settings");
+  function chk(k,def,label,sub){return'<div class="row"><div>'+label+(sub?"<small>"+sub+"</small>":"")+'</div><input type="checkbox" data-k="'+k+'"'+(on(k,def)?" checked":"")+"></div>"}
+  se.onopen=function(){
+    se.bd.innerHTML='<div class="row"><div>Accent colour<small>Highlight colour of the hub</small></div><div class="sw">'+Object.keys(ACC).map(function(n){return'<button type="button" data-a="'+n+'" title="'+n+'" style="background:'+ACC[n][0]+'"'+((ls("hub.accent")||"Orange")===n?' class="on"':"")+"></button>"}).join("")+"</div></div>"
+    +chk("hub.compact",false,"Compact toolbar","Smaller buttons and spacing")
+    +chk("hub.sbar",true,"Show status bar","Clock, connection, last backup and zoom at the bottom")
+    +'<div class="row"><div>Open on start<small>Report shown when the hub opens</small></div><select id="seopen"><option value="last">Last used report</option>'+Object.keys(NAMES).map(function(k){return'<option value="'+k+'"'+(ls("hub.open")===k?" selected":"")+">"+NAMES[k]+"</option>"}).join("")+"</select></div>"
+    +'<div class="row"><div>Auto-lock after<small>Only when a PIN is set</small></div><select id="seidle">'+[["5","5 minutes"],["10","10 minutes"],["30","30 minutes"],["0","Never"]].map(function(o){return'<option value="'+o[0]+'"'+((ls("hub.idle")===null?"10":ls("hub.idle"))===o[0]?" selected":"")+">"+o[1]+"</option>"}).join("")+"</select></div>"
+    +chk("hub.cstale",true,"Warn before sharing old data","Asks for confirmation if the report date is more than 1 day old")
+    +chk("hub.cchk",false,"Require checklist before sharing","Asks for confirmation if the pre-send checklist is not fully ticked")
+    +chk("hub.incnote",true,"Include remarks in copied summary","Adds your remarks for that report and date");
+    se.bd.querySelectorAll("input[data-k]").forEach(function(c){c.addEventListener("change",function(){ls(c.dataset.k,c.checked?"1":"0");applyPrefs()})});
+    se.bd.querySelectorAll(".sw button").forEach(function(b){b.addEventListener("click",function(){ls("hub.accent",b.dataset.a);applyPrefs();se.bd.querySelectorAll(".sw button").forEach(function(x){x.classList.toggle("on",x===b)})})});
+    $("seopen").addEventListener("change",function(){ls("hub.open",this.value==="last"?null:this.value)});$("seidle").addEventListener("change",function(){ls("hub.idle",this.value);toast("Auto-lock updated.")})};
+  se.ft.innerHTML='<button type="button" class="btn g" id="selog">Activity log</button><button type="button" class="btn g" id="sers">Reset settings</button><button type="button" class="btn" id="seok">Done</button>';
+  $("seok").addEventListener("click",se.close);$("selog").addEventListener("click",function(){se.close();ac.open()});
+  $("sers").addEventListener("click",function(){if(!confirm("Reset all settings to default? Saved reports are not touched."))return;["hub.accent","hub.compact","hub.sbar","hub.open","hub.idle","hub.cstale","hub.cchk","hub.incnote"].forEach(function(k){ls(k,null)});applyPrefs();se.onopen();toast("Settings reset.")});
+  /* ---------- toolbar buttons ---------- */
+  var tools=document.querySelector(".tools"),help=tools.lastChild;
+  function tb(label,svg,fn){var b=document.createElement("button");b.type="button";b.className="tbtn";b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+svg+"</svg>"+label;b.addEventListener("click",fn);tools.insertBefore(b,help);return b}
+  tb("Remarks",'<path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',function(){rm.open()});
+  tb("Settings",'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2L10 21h4l.6-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',function(){se.open()});
+  /* ---------- status bar ---------- */
+  var sbar=document.createElement("div");sbar.id="sbar";document.body.appendChild(sbar);
+  function ago(ms){if(!ms)return"never";var d=Math.floor((Date.now()-ms)/864e5);return d<=0?"today":d===1?"yesterday":d+" days ago"}
+  function tick(){var z=Math.round((parseFloat((document.querySelector(".frames")||{style:{}}).style.zoom)||1)*100),n=new Date();
+    var ist=n.toLocaleString("en-GB",{timeZone:"Asia/Kolkata",day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false});
+    sbar.innerHTML='<span><span class="dot'+(navigator.onLine?"":" off")+'"></span>'+(navigator.onLine?"Online":"Offline (image export needs internet)")+"</span><span>Report: <b>"+esc(NAMES[curK]||curK)+"</b></span><span>Last backup: <b>"+ago(+ls("hub.lastBackup"))+"</b></span><span>Zoom: <b>"+z+"%</b></span><span class=\"sp\">"+ist+" IST</span>"}
+  setInterval(tick,1000);tick();window.addEventListener("online",tick);window.addEventListener("offline",tick);
+  applyPrefs();
+  /* help rows */
+  var ht=document.querySelector("#help table");if(ht)ht.insertAdjacentHTML("beforeend","<tr><td>Remarks</td><td>Pre-send checklist and remarks per report and date</td></tr><tr><td>Settings</td><td>Accent colour, compact toolbar, auto-lock time, share warnings, activity log</td></tr>");
 })();
 show((location.hash||"").replace("#","")||"daily");
 })();
