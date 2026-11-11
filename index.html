@@ -275,6 +275,61 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
   /* help rows */
   var ht=document.querySelector("#help table");if(ht)ht.insertAdjacentHTML("beforeend",[["/  or  Ctrl+K","Quick search for reports and actions"],["C","Copy summary text (for WhatsApp)"],["E","Email summary"],["K","Lock with PIN (Shift+click the lock button removes the PIN)"]].map(function(r){return"<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>"}).join(""));
 })();
+
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  function ls(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  var st=document.createElement("style");st.textContent=
+  ".acts{display:none!important}"
+  +".tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-basis:100%;justify-content:flex-end;border-top:1px solid #1f3a63;padding-top:9px;margin-top:2px}.tools #fresh{margin-right:auto}"
+  +".tm{position:relative}"
+  +".tbtn{font-family:var(--font);font-weight:700;font-size:13.5px;letter-spacing:.01em;border:1px solid #3a5688;background:rgba(255,255,255,.04);color:#dbe6f7;border-radius:9px;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}"
+  +".tbtn:hover{background:rgba(255,255,255,.1);border-color:#5a7db8}.tbtn[aria-expanded=true]{background:#fff;color:#0b1f3a;border-color:#fff}.tbtn:focus-visible{outline:3px solid #fff;outline-offset:2px}"
+  +".tbtn svg{width:16px;height:16px;flex:none}.tbtn .k{font-size:11px;font-weight:800;color:#9db8e3;border:1px solid #3a5688;border-radius:5px;padding:0 5px;margin-left:4px}"
+  +".tpop{position:absolute;top:calc(100% + 8px);right:0;z-index:50;background:#fff;color:#0b1f3a;border-radius:12px;min-width:270px;max-width:calc(100vw - 24px);padding:6px;box-shadow:0 14px 38px rgba(0,0,0,.38);font-family:var(--font)}.tpop[hidden]{display:none}"
+  +".tpop h4{margin:8px 10px 4px;font-size:10.5px;letter-spacing:.12em;color:#6b7a90;font-weight:800;text-transform:uppercase}.tpop h4:first-child{margin-top:4px}"
+  +".tpop button{display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;border:0;background:transparent;text-align:left;font-family:var(--font);font-weight:600;font-size:14px;color:#0b1f3a;padding:9px 10px;border-radius:8px;cursor:pointer}.tpop button:hover,.tpop button:focus-visible{background:#e8f1fb;outline:0}"
+  +".tpop button span.s{font-size:11.5px;font-weight:700;color:#6b7a90}.tpop hr{border:0;border-top:1px solid #e3eaf4;margin:5px 4px}"
+  +"@media(max-width:760px){.tools{justify-content:flex-start}.tools #fresh{margin-right:0;flex-basis:100%}.tools{position:relative}.tm{position:static}.tm .tpop{left:0;right:0;top:calc(100% + 6px);min-width:0;max-width:none}}";
+  document.head.appendChild(st);
+  var I=function(p){return'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'};
+  var ICO={search:I('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'),exp:I('<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'),share:I('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),data:I('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'),view:I('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),lock:I('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),help:I('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/>')};
+  function click(id){return function(){var e=$(id);if(e)e.click()}}
+  var MENUS=[
+   {id:"mexp",label:"Export",ico:ICO.exp,items:[["Image",""],["Download image (portrait)","I",click("dlimg")],["Download image (landscape)","L",click("dlland")],["Document",""],["Print / Save as PDF","P",click("prnow")]]},
+   {id:"mshr",label:"Share",ico:ICO.share,items:[["WhatsApp",""],["Share image (portrait)","W",click("shimg")],["Share image (landscape)","",click("shland")],["Text",""],["Copy summary text","C",click("cpsum")],["Email summary","E",click("mlsum")]]},
+   {id:"mdat",label:"Data",ico:ICO.data,items:[["Safety",""],["Backup all saved reports","B",click("bkup")],["Restore from backup file","",click("rstor")]]},
+   {id:"mvw",label:"View",ico:ICO.view,items:[["Zoom",""],["Zoom in","+",click("zin")],["Zoom out","-",click("zout")],["Reset zoom","0",function(){$("zout").dispatchEvent(new MouseEvent("dblclick",{bubbles:true}))}],["Display",""],["Full screen / presentation","F",click("presbtn")]]},
+   {id:"msec",label:"Security",ico:ICO.lock,items:[["Privacy",""],["__lock","K",click("lockbtn")],["__unpin","",function(){$("lockbtn").dispatchEvent(new MouseEvent("click",{shiftKey:true,bubbles:true}))}]]}
+  ];
+  var tools=document.createElement("div");tools.className="tools";
+  var sb=document.createElement("button");sb.type="button";sb.className="tbtn";sb.innerHTML=ICO.search+"Search<span class=\"k\">/</span>";sb.setAttribute("aria-label","Search reports and actions");sb.addEventListener("click",function(){closeAll();click("qsbtn")()});tools.appendChild(sb);
+  var open=null;
+  function closeAll(){[].forEach.call(document.querySelectorAll(".tpop"),function(p){p.hidden=true});[].forEach.call(document.querySelectorAll(".tbtn[aria-haspopup]"),function(b){b.setAttribute("aria-expanded","false")});open=null}
+  MENUS.forEach(function(m){
+    var w=document.createElement("div");w.className="tm";
+    var b=document.createElement("button");b.type="button";b.className="tbtn";b.id=m.id;b.setAttribute("aria-haspopup","true");b.setAttribute("aria-expanded","false");b.innerHTML=m.ico+m.label+" &#9662;";
+    var pop=document.createElement("div");pop.className="tpop";pop.hidden=true;pop.setAttribute("role","menu");
+    function build(){
+      pop.innerHTML="";
+      m.items.forEach(function(it){
+        var name=it[0];
+        if(!it[1]&&!it[2]){var h=document.createElement("h4");h.textContent=name;pop.appendChild(h);return}
+        var hasPin=!!ls("hub.pin");
+        if(name==="__lock")name=hasPin?"Lock now":"Set PIN and lock";
+        if(name==="__unpin"){if(!hasPin)return;name="Remove PIN"}
+        if(m.id==="mvw"&&name==="Reset zoom"){var z=Math.round((parseFloat(document.querySelector(".frames").style.zoom)||1)*100);name="Reset zoom (now "+z+"%)"}
+        var bt=document.createElement("button");bt.type="button";bt.setAttribute("role","menuitem");bt.innerHTML="<span>"+name+"</span><span class=\"s\">"+(it[1]||"")+"</span>";
+        bt.addEventListener("click",function(){closeAll();setTimeout(it[2],60)});pop.appendChild(bt)});
+    }
+    b.addEventListener("click",function(e){e.stopPropagation();var was=open===pop;closeAll();if(!was){build();pop.hidden=false;b.setAttribute("aria-expanded","true");open=pop;var f=pop.querySelector("button");if(f)f.focus()}});
+    pop.addEventListener("keydown",function(e){var bs=[].slice.call(pop.querySelectorAll("button")),i=bs.indexOf(document.activeElement);if(e.key==="ArrowDown"){bs[(i+1)%bs.length].focus();e.preventDefault()}else if(e.key==="ArrowUp"){bs[(i+bs.length-1)%bs.length].focus();e.preventDefault()}else if(e.key==="Escape"){closeAll();b.focus()}});
+    w.appendChild(b);w.appendChild(pop);tools.appendChild(w)});
+  var hb=document.createElement("button");hb.type="button";hb.className="tbtn";hb.innerHTML=ICO.help+"Help";hb.addEventListener("click",function(){closeAll();click("helpbtn")()});tools.appendChild(hb);
+  var bar=document.querySelector(".bar");bar.insertBefore(tools,document.querySelector(".acts"));var fp=$("fresh");if(fp)tools.insertBefore(fp,tools.firstChild);
+  document.addEventListener("click",function(e){if(!e.target.closest(".tm"))closeAll()});
+  /* freshness pill goes under the title row for a cleaner look */
+})();
 show((location.hash||"").replace("#","")||"daily");
 })();
 </script></body></html>
