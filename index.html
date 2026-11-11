@@ -190,6 +190,91 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
   /* 7. shortcut hint */
   setTimeout(function(){if(!$("msg").textContent&&!ls("hub.hint")){say("Tip: press ? to see keyboard shortcuts.");ls("hub.hint","1")}},1200);
 })();
+
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var NAMES={daily:"Daily Tonnage",monthly:"Monthly Tonnage",yearly:"Yearly Tonnage",financial:"Financial Report - Air",lines:"Financial Report - Lines",fnpay:"FN Payable Plan",ageing:"Customer Ageing"};
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
+  function fdoc(){try{return $("f-"+curK).contentDocument}catch(e){return null}}
+  function T(el){return el?el.textContent.replace(/\s+/g," ").trim():""}
+  var DATEIDS=["iDate","date","iRemit","iAsOn","rdate","sDate"];
+  function rdate(d){if(!d)return"";for(var i=0;i<DATEIDS.length;i++){var e=d.getElementById(DATEIDS[i]);if(!e)continue;var v=(e.value!=null&&e.value!==""?e.value:e.textContent)||"";var m=v.match(/(\d{2})-(\d{2})-(\d{4})/);if(m)return m[0]}return""}
+  /* styles */
+  var st=document.createElement("style");st.textContent="#fresh{align-self:center;font-size:12px;font-weight:800;padding:6px 12px;border-radius:99px;white-space:nowrap;display:none}#fresh.ok{display:inline-block;background:#12503a;color:#9df0c7}#fresh.warn{display:inline-block;background:#6d4a05;color:#ffe3a0}#fresh.old{display:inline-block;background:#7e1f1b;color:#ffc9c5}"
+  +"#lock{position:fixed;inset:0;z-index:100;background:#071a33;display:none;place-items:center;padding:16px;font-family:var(--font)}#lock.on{display:grid}#lock div{background:#0c2a4d;border:1px solid #3a5688;border-radius:18px;padding:26px 24px;max-width:340px;width:100%;text-align:center;color:#fff}#lock h2{margin:0 0 6px;font-size:20px}#lock p{margin:0 0 14px;font-size:13px;color:#b9cdee}#lock input{width:100%;font-size:22px;letter-spacing:.3em;text-align:center;padding:12px;border-radius:12px;border:1px solid #3a5688;background:#071a33;color:#fff}#lock button{margin-top:12px;border:0;border-radius:10px;padding:11px 18px;font-weight:800;background:#ff7a18;color:#1a1206;cursor:pointer;font-family:var(--font)}#lock .e{color:#ff9f99;font-weight:800;min-height:18px;margin-top:8px;font-size:13px}"
+  +"#qs{position:fixed;inset:0;z-index:60;background:rgba(7,26,51,.7);display:none;align-items:flex-start;justify-content:center;padding:12vh 14px 14px;font-family:var(--font)}#qs.on{display:flex}#qs>div{background:#fff;border-radius:14px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45)}#qs input{width:100%;border:0;border-bottom:1px solid #e3eaf4;padding:16px 18px;font-size:16px;font-family:var(--font);outline:0}#qs ul{list-style:none;margin:0;padding:6px;max-height:50vh;overflow:auto}#qs li{padding:10px 12px;border-radius:9px;font-weight:700;font-size:14px;color:#0b1f3a;cursor:pointer;display:flex;justify-content:space-between;gap:10px}#qs li small{color:#6b7a90;font-weight:600}#qs li.s{background:#e8f1fb}";
+  document.head.appendChild(st);
+  /* buttons */
+  var acts=document.querySelector(".acts"),mk=function(id,title,html){var b=document.createElement("button");b.type="button";b.id=id;b.className="ib sm";b.title=title;b.setAttribute("aria-label",title);b.innerHTML=html;acts.appendChild(b);return b};
+  var ic=function(i){return'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+i+'</svg>'};
+  mk("cpsum","Copy summary as text for WhatsApp (C)",ic('<rect x="8" y="3" width="11" height="14" rx="2"/><path d="M5 8v11a2 2 0 0 0 2 2h8"/>'));
+  mk("mlsum","Email summary (E)",ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'));
+  mk("qsbtn","Quick search: reports and actions (/)",ic('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'));
+  mk("lockbtn","Lock screen with PIN (K). Shift+click removes the PIN",ic('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'));
+  var fr=document.createElement("span");fr.id="fresh";document.querySelector(".bar").insertBefore(fr,acts);
+  /* 1+2. summary text */
+  function summary(){
+    var d=fdoc();if(!d||!d.body)return null;
+    var ks=[].slice.call(d.querySelectorAll(".kpi")).filter(function(k){return k.offsetParent!==null||true});
+    if(!ks.length)return null;
+    var co=T(d.querySelector(".co")).replace(/\s*\|\s*/g," | "),h1=T(d.querySelector("h1")),dt=rdate(d);
+    var L=["*"+(co||"SEAPORT LINES INDIA PVT LTD")+"*","*"+h1+"*"+(dt?" - "+dt:"")];
+    ks.forEach(function(k){var a=T(k.querySelector("small")),b=T(k.querySelector(".big")),r=T(k.querySelector(".rs")),l=T(k.querySelector(".dl"));if(!a||!b)return;L.push("- "+a.replace(/\b\w/g,function(c){return c})+": "+b+(r&&r!==b?" ("+r+")":"")+(l?" | "+l:""))});
+    var net=d.querySelector(".net");if(net)L.push("",(net.innerText||T(net)).replace(/\s*\n\s*/g," | ").trim());
+    return{text:L.join("\n"),title:h1,date:dt}}
+  function noSum(){say("Summary text is available for the financial, FN Payable and Ageing reports.")}
+  function copy(t,ok){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){say(ok)},function(){fb()})}else fb();function fb(){var a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();try{document.execCommand("copy");say(ok)}catch(e){say("Could not copy. Select and copy manually.")}a.remove()}}
+  function doCopy(){var s=summary();if(!s){noSum();return}copy(s.text,"Summary copied. Paste it in WhatsApp.")}
+  function doMail(){var s=summary();if(!s){noSum();return}location.href="mailto:?subject="+encodeURIComponent((s.title||"Report")+(s.date?" - "+s.date:""))+"&body="+encodeURIComponent(s.text.replace(/\*/g,"")+"\n\n(Attach the downloaded report image.)");say("Opening your email app. Attach the downloaded image.")}
+  $("cpsum").addEventListener("click",doCopy);$("mlsum").addEventListener("click",doMail);
+  /* 3. freshness */
+  function fresh(){var d=fdoc(),s=d?rdate(d):"",m=s.match(/(\d{2})-(\d{2})-(\d{4})/);
+    if(!m){fr.className="";fr.textContent="";return}
+    var dd=new Date(+m[3],+m[2]-1,+m[1]),now=new Date();now.setHours(0,0,0,0);var n=Math.round((now-dd)/864e5);
+    fr.className=n<=1?"ok":n<=3?"warn":"old";
+    fr.textContent=n<0?"Report date "+s+" is in the future":n===0?"Data as on "+s+" (today)":n===1?"Data as on "+s+" (yesterday)":"Data as on "+s+" ("+n+" days old)"}
+  setInterval(fresh,1500);setTimeout(fresh,400);
+  /* 4. lock */
+  var lk=document.createElement("div");lk.id="lock";lk.setAttribute("role","dialog");lk.setAttribute("aria-label","Locked");
+  lk.innerHTML='<div><h2>SEAPOL Report Hub</h2><p>Locked. Enter your PIN to continue.</p><input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="PIN"><div class="e" id="pine"></div><button type="button" id="pinok">UNLOCK</button><p style="margin-top:14px;font-size:11.5px">Privacy screen only. It hides the reports on this device; it is not encryption.</p></div>';
+  document.body.appendChild(lk);
+  function hash(s){var enc=new TextEncoder().encode("seapol:"+s);if(window.crypto&&crypto.subtle)return crypto.subtle.digest("SHA-256",enc).then(function(b){return[].map.call(new Uint8Array(b),function(x){return("0"+x.toString(16)).slice(-2)}).join("")});var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return Promise.resolve("x"+h)}
+  function lockNow(){lk.classList.add("on");$("pin").value="";$("pine").textContent="";setTimeout(function(){$("pin").focus()},50)}
+  function tryUnlock(){var p=$("pin").value;hash(p).then(function(h){if(h===ls("hub.pin")){lk.classList.remove("on");$("pin").value="";idle()}else{$("pine").textContent="Wrong PIN. Try again.";$("pin").value="";$("pin").focus()}})}
+  $("pinok").addEventListener("click",tryUnlock);$("pin").addEventListener("keydown",function(e){if(e.key==="Enter")tryUnlock()});
+  function setPin(){var a=prompt("Set a PIN to lock the hub (4 to 12 digits):");if(a===null)return;if(!/^\d{4,12}$/.test(a)){alert("Use 4 to 12 digits only.");return}var b=prompt("Type the PIN again to confirm:");if(b!==a){alert("The PINs did not match. Nothing was changed.");return}
+    hash(a).then(function(h){ls("hub.pin",h);say("PIN set. The hub locks after 10 minutes of no use, or press K.");lockNow()})}
+  function removePin(){if(!ls("hub.pin")){say("No PIN is set.");return}var a=prompt("Enter your PIN to remove it:");if(a===null)return;hash(a).then(function(h){if(h===ls("hub.pin")){ls("hub.pin",null);say("PIN removed.")}else say("Wrong PIN. It was not removed.")})}
+  function doLock(){if(!ls("hub.pin"))setPin();else lockNow()}
+  $("lockbtn").addEventListener("click",function(e){if(e.shiftKey)removePin();else doLock()});
+  var it;function idle(){clearTimeout(it);if(ls("hub.pin"))it=setTimeout(lockNow,10*60*1000)}
+  ["mousemove","keydown","touchstart","click","scroll"].forEach(function(ev){window.addEventListener(ev,function(){if(!lk.classList.contains("on"))idle()},{passive:true})});
+  if(ls("hub.pin")){lockNow();}
+  /* 5. quick search */
+  var qs=document.createElement("div");qs.id="qs";qs.innerHTML='<div><input id="qi" type="text" placeholder="Type a report or action..." autocomplete="off" aria-label="Search reports and actions"><ul id="ql"></ul></div>';document.body.appendChild(qs);
+  var cmds=[].concat(Object.keys(NAMES).map(function(k,i){return{n:NAMES[k],h:"Open report ("+(i+1)+")",f:function(){show(k)}}}),[
+   {n:"Download image (portrait)",h:"I",f:function(){$("dlimg").click()}},{n:"Download landscape image",h:"L",f:function(){$("dlland").click()}},{n:"Share image to WhatsApp",h:"W",f:function(){$("shimg").click()}},{n:"Share landscape image to WhatsApp",h:"",f:function(){$("shland").click()}},
+   {n:"Copy summary as text",h:"C",f:doCopy},{n:"Email summary",h:"E",f:doMail},{n:"Print current report",h:"P",f:function(){$("prnow").click()}},
+   {n:"Backup all saved reports",h:"B",f:function(){$("bkup").click()}},{n:"Restore from backup",h:"",f:function(){$("rstor").click()}},
+   {n:"Full screen / presentation",h:"F",f:function(){$("presbtn").click()}},{n:"Zoom in",h:"+",f:function(){$("zin").click()}},{n:"Zoom out",h:"-",f:function(){$("zout").click()}},
+   {n:"Lock screen",h:"K",f:doLock},{n:"Keyboard shortcuts",h:"?",f:function(){$("helpbtn").click()}}]);
+  var sel=0,cur=[];
+  function render(){var v=$("qi").value.toLowerCase().trim();cur=cmds.filter(function(c){return !v||c.n.toLowerCase().indexOf(v)>=0});if(sel>=cur.length)sel=0;
+    $("ql").innerHTML=cur.map(function(c,i){return'<li data-i="'+i+'"'+(i===sel?' class="s"':"")+"><span>"+c.n+"</span><small>"+c.h+"</small></li>"}).join("")||"<li><span>No match</span></li>"}
+  function qopen(on){qs.classList.toggle("on",on);if(on){$("qi").value="";sel=0;render();$("qi").focus();setTimeout(function(){$("qi").focus()},30)}}
+  function run(i){var c=cur[i];if(!c)return;qopen(false);setTimeout(c.f,60)}
+  $("qi").addEventListener("input",function(){sel=0;render()});
+  $("qi").addEventListener("keydown",function(e){if(e.key==="ArrowDown"){sel=Math.min(cur.length-1,sel+1);render();e.preventDefault()}else if(e.key==="ArrowUp"){sel=Math.max(0,sel-1);render();e.preventDefault()}else if(e.key==="Enter"){run(sel);e.preventDefault()}else if(e.key==="Escape")qopen(false)});
+  $("ql").addEventListener("click",function(e){var li=e.target.closest("li[data-i]");if(li)run(+li.dataset.i)});
+  qs.addEventListener("click",function(e){if(e.target===qs)qopen(false)});
+  $("qsbtn").addEventListener("click",function(){qopen(true)});
+  document.addEventListener("keydown",function(e){
+    if((e.ctrlKey||e.metaKey)&&(e.key==="k"||e.key==="K")){e.preventDefault();qopen(true);return}
+    if(e.ctrlKey||e.metaKey||e.altKey)return;var t=e.target,tag=t&&t.tagName;if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT"||lk.classList.contains("on")||qs.classList.contains("on"))return;
+    var k=e.key;if(k==="/"){qopen(true)}else if(k==="c"||k==="C")doCopy();else if(k==="e"||k==="E")doMail();else if(k==="k"||k==="K")doLock();else return;e.preventDefault()});
+  /* help rows */
+  var ht=document.querySelector("#help table");if(ht)ht.insertAdjacentHTML("beforeend",[["/  or  Ctrl+K","Quick search for reports and actions"],["C","Copy summary text (for WhatsApp)"],["E","Email summary"],["K","Lock with PIN (Shift+click the lock button removes the PIN)"]].map(function(r){return"<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>"}).join(""));
+})();
 show((location.hash||"").replace("#","")||"daily");
 })();
 </script></body></html>
