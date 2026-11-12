@@ -119,16 +119,28 @@ document.getElementById("shland").addEventListener("click",function(){landscapeI
   });
   var fi=document.getElementById("rsfile");
   document.getElementById("rstor").addEventListener("click",function(){fi.value="";fi.click()});
+  fi.removeAttribute("accept");
+  var SKIP={"hub.lastBackup":1,"hub.pin":1,"hub.last":1};
+  function parseBackup(t){var j;t=String(t||"").replace(/^﻿/,"");try{j=JSON.parse(t)}catch(e){return null}
+    if(!j||typeof j!=="object"||Array.isArray(j))return null;
+    if(j.data&&typeof j.data==="object")return j.data;
+    var ks=Object.keys(j);return ks.some(function(k){return /\.hist\.v1$|^hub\./.test(k)})?j:null}
+  function merged(k,cur,inc){
+    if(/\.hist\.v1$/.test(k)){try{var a=JSON.parse(cur||"{}"),b=JSON.parse(inc);if(a&&b&&typeof a==="object"&&typeof b==="object"){Object.keys(b).forEach(function(d){a[d]=b[d]});return JSON.stringify(a)}}catch(e){}}
+    return inc}
   fi.addEventListener("change",function(){
     var f=fi.files&&fi.files[0];if(!f)return;
-    var r=new FileReader();r.onload=function(){
-      var j;try{j=JSON.parse(r.result)}catch(e){say("This file is not a valid SEAPOL backup.");return}
-      if(!j||j.app!=="SEAPOL Report Hub"||!j.data||typeof j.data!=="object"){say("This file is not a SEAPOL backup.");return}
-      var ks=Object.keys(j.data);
-      if(!confirm("Restore "+ks.length+" saved items from the backup made on "+(j.saved||"").slice(0,10)+"?\n\nThey will replace saved items with the same name on this device. A safety copy of your current data is downloaded first."))return;
-      document.getElementById("bkup").click();
-      setTimeout(function(){try{ks.forEach(function(k){localStorage.setItem(k,String(j.data[k]))})}catch(e){say("Restore failed: browser storage is full or blocked.");return}
-        say("Restored "+ks.length+" items. Reloading...");setTimeout(function(){location.reload()},900)},700);
+    var r=new FileReader();r.onerror=function(){say("Could not read the file.")};r.onload=function(){
+      var d=parseBackup(r.result);
+      if(!d){say("This is not a SEAPOL backup JSON. Export one with the shield (Backup) button on the other device.");return}
+      var ks=Object.keys(d).filter(function(k){return !SKIP[k]});
+      if(!ks.length){say("The backup file has no saved data.");return}
+      if(!confirm("Import "+ks.length+" saved items from this backup?\n\nSaved report days are merged with the days on this device (same date = backup wins). Other settings are replaced. A safety copy of your current data is downloaded first."))return;
+      try{document.getElementById("bkup").click()}catch(e){}
+      setTimeout(function(){var n=0,bad=0;
+        ks.forEach(function(k){try{var v=d[k];v=typeof v==="string"?v:JSON.stringify(v);localStorage.setItem(k,merged(k,localStorage.getItem(k),v));n++}catch(e){bad++}});
+        if(!n){say("Import failed: browser storage is full or blocked.");return}
+        say("Imported "+n+" items"+(bad?" ("+bad+" skipped)":"")+". Reloading...");setTimeout(function(){location.reload()},900)},700);
     };r.readAsText(f)});
   /* reminder */
   try{var last=+localStorage.getItem(KEY)||0,has=Object.keys(ours()).length>0;
