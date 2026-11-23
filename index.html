@@ -24,6 +24,158 @@
 <div class="bar"><div class="brand">SEAPOL <span>REPORT HUB</span></div><div class="tabs" role="tablist"><div class="menu"><button type="button" id="t-tonnage" aria-haspopup="true" aria-expanded="false" aria-selected="false">Tonnage Report: <b id="tl">Daily</b> &#9662;</button><div class="pop" id="pop" hidden><button type="button" data-k="daily">Daily Tonnage</button><button type="button" data-k="monthly">Monthly Tonnage</button><button type="button" data-k="yearly">Yearly Tonnage</button></div></div><div class="menu"><button type="button" id="t-fin" aria-haspopup="true" aria-expanded="false" aria-selected="false">Financial Report: <b id="fl">Air</b> &#9662;</button><div class="pop" id="popf" hidden><button type="button" data-k="financial">Financial Report - Air</button><button type="button" data-k="lines">Financial Report - Lines</button></div></div><button type="button" role="tab" id="t-fnpay" data-k="fnpay" aria-selected="false">FN Payable Plan</button><button type="button" role="tab" id="t-ageing" data-k="ageing" aria-selected="false">Customer Ageing</button></div><div class="acts"><button type="button" class="ib c-dl" id="dlimg" title="Download image (PNG)" aria-label="Download image (PNG)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button><button type="button" class="ib c-wa" id="shimg" title="Share to WhatsApp" aria-label="Share to WhatsApp"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z"/><path fill="#fff" stroke="none" d="M9 7.8c-.5.5-.7 1.3-.4 2.2.7 2.1 2.6 4 4.8 4.7.9.3 1.7.1 2.2-.4l.5-.6c.2-.3.1-.6-.2-.8l-1.5-.8c-.3-.1-.5 0-.7.2l-.5.6c-1.1-.4-2-1.3-2.5-2.4l.6-.5c.2-.2.3-.4.2-.7l-.7-1.6c-.1-.3-.5-.4-.8-.2z"/></svg></button><button type="button" class="ib c-dl" id="dlland" title="Download landscape image" aria-label="Download landscape image"><svg viewBox="0 0 28 24" width="30" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2" width="25" height="12" rx="2"/><path d="M14 16v6M11 19.5l3 3 3-3"/></svg></button><button type="button" class="ib c-wa" id="shland" title="Share landscape image to WhatsApp" aria-label="Share landscape image to WhatsApp"><svg viewBox="0 0 28 24" width="30" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2" width="25" height="12" rx="2"/><path d="M10 18h8M10 22h5"/></svg></button><button type="button" class="ib" id="bkup" style="background:#6b3fa0" title="Backup all saved reports (download a safety file)" aria-label="Backup all saved reports"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M12 8v6M9 11.5l3 3 3-3"/></svg></button><button type="button" class="ib" id="rstor" style="background:#0f766e" title="Restore saved reports from a backup file" aria-label="Restore from backup"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M12 14V8M9 10.5l3-3 3 3"/></svg></button><button type="button" class="ib sm" id="zout" title="Zoom out (-). Double-click to reset" aria-label="Zoom out">A&minus;</button><button type="button" class="ib sm" id="zin" title="Zoom in (+)" aria-label="Zoom in">A+</button><button type="button" class="ib sm" id="prnow" title="Print current report (P)" aria-label="Print current report"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2"/><path d="M7 14h10v6H7z"/></svg></button><button type="button" class="ib sm" id="presbtn" title="Full screen / presentation mode (F)" aria-label="Presentation mode"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button type="button" class="ib sm" id="helpbtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button><input type="file" id="rsfile" accept=".json,application/json" hidden></div><div id="msg" role="status" aria-live="polite"></div></div>
 <div class="frames"><iframe id="f-daily" title="Daily Tonnage"></iframe><iframe id="f-monthly" title="Monthly Tonnage"></iframe><iframe id="f-yearly" title="Yearly Tonnage"></iframe><iframe id="f-financial" title="Financial Report - Air"></iframe><iframe id="f-lines" title="Financial Report - Lines"></iframe><iframe id="f-fnpay" title="FN Payable Plan"></iframe><iframe id="f-ageing" title="Customer Ageing"></iframe></div>
 <script>
+/* ===== SUPABASE SYNC LAYER (added; existing hub code is untouched) ===== */
+(function(){
+"use strict";
+/* ---- SETTINGS: edit these 3 lines only ---- */
+var SUPABASE_URL="https://YOUR-PROJECT-REF.supabase.co";
+var SUPABASE_KEY="YOUR-ANON-OR-PUBLISHABLE-KEY";
+var ENABLE_CHAT=false;   /* true = show the optional team chat button */
+/* ------------------------------------------- */
+if(/YOUR-/.test(SUPABASE_URL+SUPABASE_KEY)){console.warn("Supabase not configured: running local-only.");return}
+var LOCAL_ONLY={"hub.pin":1,"hub.last":1,"hub.lastBackup":1,"hub.sbInit":1};
+var HIST=/\.hist\.v1$/, SK="sbsync.session", PK="sbsync.pending", POLL_MS=15000;
+var LS=window.localStorage, SS=window.sessionStorage;
+var P0=Storage.prototype, rawSet=P0.setItem, rawDel=P0.removeItem, rawGet=P0.getItem;
+function lget(k){try{return rawGet.call(LS,k)}catch(e){return null}}
+function lset(k,v){try{rawSet.call(LS,k,v)}catch(e){}}
+function sget(k){try{return JSON.parse(SS.getItem(k)||"null")}catch(e){return null}}
+function sset(k,v){try{SS.setItem(k,JSON.stringify(v))}catch(e){}}
+var sess=sget(SK), authed=false, offline=false, busy=false, lastTs="", pending=sget(PK)||{}, timers={};
+
+/* ---------- http ---------- */
+function hdrs(extra,noAuth){var h={apikey:SUPABASE_KEY,"Content-Type":"application/json"};
+  if(!noAuth&&sess&&sess.access_token)h.Authorization="Bearer "+sess.access_token;
+  for(var k in (extra||{}))h[k]=extra[k];return h}
+function syncReq(m,p,b,x,noAuth){var q=new XMLHttpRequest();q.open(m,SUPABASE_URL+p,false);var h=hdrs(x,noAuth);
+  for(var k in h)q.setRequestHeader(k,h[k]);
+  try{q.send(b==null?null:JSON.stringify(b))}catch(e){return{status:0,text:""}}return{status:q.status,text:q.responseText}}
+function asyncReq(m,p,b,x,noAuth){return fetch(SUPABASE_URL+p,{method:m,headers:hdrs(x,noAuth),body:b==null?undefined:JSON.stringify(b)})
+  .then(function(r){return r.text().then(function(t){return{status:r.status,text:t}})})}
+function saveToken(j){var s={access_token:j.access_token,refresh_token:j.refresh_token,
+  expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600),
+  email:(j.user&&j.user.email)||(sess&&sess.email)||"",uid:(j.user&&j.user.id)||(sess&&sess.uid)||""};sset(SK,s);return s}
+function expired(s){return !s||!s.expires_at||Date.now()/1000>s.expires_at-90}
+function refreshSync(){if(!sess||!sess.refresh_token)return null;
+  var r=syncReq("POST","/auth/v1/token?grant_type=refresh_token",{refresh_token:sess.refresh_token},{},true);
+  if(r.status!==200)return null;try{sess=saveToken(JSON.parse(r.text));return sess}catch(e){return null}}
+function ensureToken(){if(!expired(sess))return Promise.resolve();
+  return asyncReq("POST","/auth/v1/token?grant_type=refresh_token",{refresh_token:sess&&sess.refresh_token},{},true).then(function(r){
+    if(r.status===200){sess=saveToken(JSON.parse(r.text))}else throw new Error("auth")})}
+
+/* ---------- small UI ---------- */
+var pill;
+function ui(){if(pill)return;var st=document.createElement("style");
+  st.textContent="#sbPill{position:fixed;left:12px;bottom:12px;z-index:2147482000;background:#071a33;color:#dbe6f7;font:600 12px Montserrat,'Segoe UI',Arial,sans-serif;padding:7px 11px;border-radius:999px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:calc(100vw - 90px)}#sbPill i{width:9px;height:9px;border-radius:50%;background:#1fa855;flex:none}#sbPill.warn i{background:#ff7a18}#sbPill.bad i{background:#e04545}#sbPill button{font:inherit;border:0;border-radius:8px;padding:3px 8px;cursor:pointer;background:#ff7a18;color:#1a1206}@media print{#sbPill,#sbChatBtn,#sbChat{display:none!important}}";
+  document.head.appendChild(st);pill=document.createElement("div");pill.id="sbPill";
+  pill.innerHTML='<i></i><span id="sbTxt"></span><button type="button" id="sbReload" hidden>Reload</button><button type="button" id="sbOut">Sign out</button>';
+  document.body.appendChild(pill);
+  pill.querySelector("#sbReload").onclick=function(){location.reload()};
+  pill.querySelector("#sbOut").onclick=function(){try{SS.removeItem(SK)}catch(e){}location.reload()}}
+function status(t,c){ui();pill.className=c||"";pill.querySelector("#sbTxt").textContent=t}
+function loginUI(msg){if(document.getElementById("sbLogin"))return;var o=document.createElement("div");o.id="sbLogin";
+  o.style.cssText="position:fixed;inset:0;z-index:2147483000;background:#071a33;display:grid;place-items:center;padding:16px;font-family:Montserrat,'Segoe UI',Arial,sans-serif";
+  var inp="font:600 14px inherit;border:1px solid #c9d6ea;border-radius:10px;padding:11px;width:100%";
+  o.innerHTML='<form id="sbForm" style="background:#fff;border-radius:16px;padding:26px;width:100%;max-width:360px;display:grid;gap:12px"><div style="font-weight:900;font-size:18px;color:#071a33">SEAPOL <span style="color:#ff7a18">REPORT HUB</span></div><div style="font-size:13px;color:#5b6b86">Sign in to load and sync your reports</div><input id="sbE" type="email" placeholder="Email" required autocomplete="username" style="'+inp+'"><input id="sbP" type="password" placeholder="Password" required autocomplete="current-password" style="'+inp+'"><button type="submit" style="font:800 14px inherit;border:0;border-radius:10px;padding:12px;background:#ff7a18;color:#1a1206;cursor:pointer">Sign in</button><div id="sbM" style="font-size:12.5px;color:#c0392b;min-height:16px"></div></form>';
+  document.body.appendChild(o);var m=o.querySelector("#sbM");m.textContent=msg||"";
+  o.querySelector("#sbForm").onsubmit=function(e){e.preventDefault();m.style.color="#5b6b86";m.textContent="Signing in...";
+    asyncReq("POST","/auth/v1/token?grant_type=password",{email:o.querySelector("#sbE").value.trim(),password:o.querySelector("#sbP").value},{},true).then(function(r){
+      if(r.status===200){sess=saveToken(JSON.parse(r.text));location.reload()}
+      else{m.style.color="#c0392b";m.textContent="Wrong email or password."}
+    }).catch(function(){m.style.color="#c0392b";m.textContent="No connection. Try again."})}}
+function authLost(){authed=false;status("Signed out","bad");loginUI("Session expired. Sign in again. Unsent changes are kept and will upload.")}
+
+/* ---------- write-through: every localStorage write/remove goes to Supabase ---------- */
+function mark(k,op){if(!authed||LOCAL_ONLY[k])return;pending[k]=op;sset(PK,pending);clearTimeout(timers.f);timers.f=setTimeout(flush,700)}
+function installPatch(w){try{var P=w.Storage.prototype,ls=w.localStorage,s0=P.setItem,r0=P.removeItem;
+  if(P.__sb)return;P.__sb=1;
+  P.setItem=function(k,v){s0.call(this,k,v);if(this===ls)mark(String(k),"set")};
+  P.removeItem=function(k){r0.call(this,k);if(this===ls)mark(String(k),"del")}}catch(e){}}
+installPatch(window);window.__sbPatch=installPatch;
+/* tabs are srcdoc iframes: give each one the same hook as it is created (no change to the tab pages) */
+try{var d=Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype,"srcdoc");
+  Object.defineProperty(HTMLIFrameElement.prototype,"srcdoc",{configurable:true,enumerable:d.enumerable,get:d.get,
+    set:function(v){d.set.call(this,String(v).replace(/<head>/i,"<head><script>try{parent.__sbPatch(window)}catch(e){}<\/script>"))}})}catch(e){}
+
+function push(k){var op=pending[k],val=lget(k),req;
+  if(op==="del"||val===null)req=asyncReq("DELETE","/rest/v1/app_store?key=eq."+encodeURIComponent(k),null,{Prefer:"return=minimal"});
+  else req=asyncReq("POST","/rest/v1/app_store?on_conflict=key",{key:k,value:val},{Prefer:"resolution=merge-duplicates,return=minimal"});
+  return req.then(function(r){
+    if(r.status>=200&&r.status<300){if(pending[k]===op&&lget(k)===val){delete pending[k];sset(PK,pending)}}
+    else if(r.status===401)throw new Error("auth");else throw new Error("http "+r.status)})}
+function flush(){if(busy||!authed)return;var keys=Object.keys(pending);
+  if(!keys.length){if(!offline)status("Synced \u2022 "+(sess&&sess.email||""));return}
+  busy=true;status("Saving...","warn");
+  ensureToken().then(function(){return keys.reduce(function(p,k){return p.then(function(){return push(k)})},Promise.resolve())})
+  .then(function(){offline=false;status("Synced \u2022 "+(sess&&sess.email||""))})
+  .catch(function(e){if(e&&e.message==="auth"){authLost()}else{offline=true;status("Offline - will retry","bad");clearTimeout(timers.r);timers.r=setTimeout(flush,10000)}})
+  .then(function(){busy=false;if(authed&&!offline&&Object.keys(pending).length)timers.f=setTimeout(flush,700)})}
+
+/* ---------- first load: pull everything into localStorage BEFORE the hub starts ---------- */
+function mergeHist(loc,rem){try{var a=JSON.parse(loc||"{}"),b=JSON.parse(rem||"{}");
+  if(a&&b&&typeof a==="object"&&typeof b==="object"&&!Array.isArray(a)&&!Array.isArray(b)){for(var d in b)a[d]=b[d];return JSON.stringify(a)}}catch(e){}return rem}
+function hydrate(){var r=syncReq("GET","/rest/v1/app_store?select=key,value,updated_at");
+  if(r.status===401&&refreshSync())r=syncReq("GET","/rest/v1/app_store?select=key,value,updated_at");
+  if(r.status===401)return"auth";if(r.status!==200)return"fail";
+  var rows;try{rows=JSON.parse(r.text)}catch(e){return"fail"}
+  var first=!lget("hub.sbInit"),seen={};
+  rows.forEach(function(row){seen[row.key]=1;if(row.updated_at>lastTs)lastTs=row.updated_at;
+    if(LOCAL_ONLY[row.key]||pending[row.key])return;
+    var loc=lget(row.key),val=row.value;
+    if(first&&loc!==null&&HIST.test(row.key)){val=mergeHist(loc,row.value);if(val!==row.value)pending[row.key]="set"}
+    if(loc!==val)lset(row.key,val)});
+  if(first){var ks=[];try{for(var i=0;i<LS.length;i++)ks.push(LS.key(i))}catch(e){}
+    ks.forEach(function(k){if(k&&!seen[k]&&!LOCAL_ONLY[k])pending[k]="set"});lset("hub.sbInit","1")}
+  sset(PK,pending);return"ok"}
+
+/* ---------- live updates from other users (checked every 15 s) ---------- */
+function poll(){if(!authed||busy)return;
+  ensureToken().then(function(){return asyncReq("GET","/rest/v1/app_store?select=key,value,updated_at&order=updated_at.asc"+(lastTs?"&updated_at=gt."+encodeURIComponent(lastTs):""))})
+  .then(function(r){if(r.status!==200)return;var rows=JSON.parse(r.text),ch=false;
+    rows.forEach(function(row){if(row.updated_at>lastTs)lastTs=row.updated_at;
+      if(LOCAL_ONLY[row.key]||pending[row.key])return;if(lget(row.key)!==row.value){lset(row.key,row.value);ch=true}});
+    if(ch){status("Updated by a colleague","warn");pill.querySelector("#sbReload").hidden=false;
+      try{window.__hubDashRefresh&&window.__hubDashRefresh()}catch(e){}}})
+  .catch(function(e){if(e&&e.message==="auth")authLost()})}
+
+/* ---------- optional team chat ---------- */
+function chat(){var st=document.createElement("style");
+  st.textContent="#sbChatBtn{position:fixed;right:18px;bottom:78px;z-index:2147482000;width:48px;height:48px;border-radius:50%;border:0;background:#071a33;color:#fff;font-size:21px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}#sbChatBtn b{position:absolute;top:-4px;right:-4px;background:#e04545;color:#fff;font:800 11px sans-serif;border-radius:99px;padding:2px 6px}#sbChat{position:fixed;right:18px;bottom:134px;z-index:2147482000;width:min(340px,calc(100vw - 36px));height:420px;max-height:70vh;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:none;flex-direction:column;overflow:hidden;font:13px Montserrat,'Segoe UI',Arial,sans-serif}#sbChat.on{display:flex}#sbChat header{background:#071a33;color:#fff;padding:10px 14px;font-weight:800}#sbCL{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:#f4f7fb}#sbCL div{max-width:85%;padding:7px 10px;border-radius:10px;background:#fff;border:1px solid #dde6f2;color:#1b2a41;word-wrap:break-word}#sbCL div.me{align-self:flex-end;background:#ffe8d4;border-color:#ffd2ab}#sbCL small{display:block;color:#6b7a93;font-size:10.5px;margin-bottom:2px}#sbChat form{display:flex;gap:6px;padding:8px;border-top:1px solid #e3eaf4}#sbChat input{flex:1;border:1px solid #c9d6ea;border-radius:8px;padding:8px;font:inherit}#sbChat button{border:0;border-radius:8px;background:#ff7a18;color:#1a1206;font-weight:800;padding:0 12px;cursor:pointer}";
+  document.head.appendChild(st);
+  var btn=document.createElement("button");btn.id="sbChatBtn";btn.type="button";btn.title="Team chat";btn.innerHTML="\uD83D\uDCAC<b hidden></b>";
+  var box=document.createElement("div");box.id="sbChat";box.innerHTML='<header>Team chat</header><div id="sbCL"></div><form><input id="sbCI" maxlength="1000" placeholder="Type a message" autocomplete="off"><button type="submit">Send</button></form>';
+  document.body.appendChild(btn);document.body.appendChild(box);
+  var list=box.querySelector("#sbCL"),inp=box.querySelector("#sbCI"),badge=btn.querySelector("b"),last=0,unread=0,first=true,me=(sess&&sess.uid)||"",nm=((sess&&sess.email)||"user").split("@")[0],t;
+  function add(m){var d=document.createElement("div"),s=document.createElement("small");if(m.user_id===me)d.className="me";
+    s.textContent=m.user_name+" \u2022 "+new Date(m.created_at).toLocaleString([], {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+    d.appendChild(s);d.appendChild(document.createTextNode(m.body));list.appendChild(d)}
+  function load(){if(!authed)return schedule();
+    ensureToken().then(function(){return asyncReq("GET","/rest/v1/chat_messages?select=id,user_id,user_name,body,created_at&"+(first?"order=id.desc&limit=50":"order=id.asc&id=gt."+last+"&limit=200"))})
+    .then(function(r){if(r.status!==200)return;var rows=JSON.parse(r.text);if(first)rows.reverse();
+      rows.forEach(function(m){add(m);if(m.id>last)last=m.id;if(!first&&!box.classList.contains("on")&&m.user_id!==me)unread++});
+      if(rows.length&&box.classList.contains("on"))list.scrollTop=list.scrollHeight;
+      first=false;badge.hidden=!unread;badge.textContent=unread}).catch(function(){}).then(schedule)}
+  function schedule(){clearTimeout(t);t=setTimeout(load,box.classList.contains("on")?3000:20000)}
+  btn.onclick=function(){box.classList.toggle("on");if(box.classList.contains("on")){unread=0;badge.hidden=true;list.scrollTop=list.scrollHeight;inp.focus();load()}};
+  box.querySelector("form").onsubmit=function(e){e.preventDefault();var v=inp.value.trim();if(!v)return;inp.value="";
+    ensureToken().then(function(){return asyncReq("POST","/rest/v1/chat_messages",{user_name:nm,body:v},{Prefer:"return=minimal"})}).then(load).catch(function(){inp.value=v})};
+  load()}
+
+/* ---------- start ---------- */
+if(!sess||!sess.refresh_token){loginUI();return}
+if(expired(sess)){sess=refreshSync();if(!sess){loginUI("Please sign in.");return}}
+authed=true;status("Connecting...","warn");
+var h=hydrate();
+if(h==="auth"){authed=false;try{SS.removeItem(SK)}catch(e){}loginUI("Please sign in again.");return}
+if(h==="fail"){offline=true;status("Offline - using this device's copy","bad");timers.r=setTimeout(flush,10000)}
+else{status("Synced \u2022 "+(sess.email||""));flush()}
+setInterval(poll,POLL_MS);
+document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();flush()}});
+if(ENABLE_CHAT)chat();
+})();
+/* ===== END SUPABASE SYNC LAYER ===== */
+</script>
+<script>
 (function(){
 "use strict";
 var PAGES={
