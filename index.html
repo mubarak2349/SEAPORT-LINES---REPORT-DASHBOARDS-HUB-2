@@ -31,6 +31,7 @@
 var SUPABASE_URL="https://lmzlacmulfasesblivlp.supabase.co";
 var SUPABASE_KEY="sb_publishable_DjHxrQAp1-qtew-1U-DxBg_FUClVM0D";
 var ENABLE_CHAT=true;    /* true = Team Chat tab inside the assistant panel */
+var BRAND="SEAPOL", BRAND_SUB="REPORT HUB";   /* shown on the sign-in card */
 /* ------------------------------------------- */
 if(/YOUR-/.test(SUPABASE_URL+SUPABASE_KEY)){console.warn("Supabase not configured: running local-only.");return}
 var LOCAL_ONLY={"hub.pin":1,"hub.last":1,"hub.lastBackup":1,"hub.sbInit":1};
@@ -63,34 +64,35 @@ function ensureToken(){if(!expired(sess))return Promise.resolve();
   return asyncReq("POST","/auth/v1/token?grant_type=refresh_token",{refresh_token:sess&&sess.refresh_token},{},true).then(function(r){
     if(r.status===200){sess=saveToken(JSON.parse(r.text))}else throw new Error("auth")})}
 
-/* ---------- small UI ---------- */
-var pill;
-function ui(){if(pill)return;var st=document.createElement("style");
-  st.textContent="#sbPill{position:fixed;left:12px;bottom:12px;z-index:2147482000;background:#071a33;color:#dbe6f7;font:600 12px Montserrat,'Segoe UI',Arial,sans-serif;padding:7px 11px;border-radius:999px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:calc(100vw - 90px)}#sbPill i{width:9px;height:9px;border-radius:50%;background:#1fa855;flex:none}#sbPill.warn i{background:#ff7a18}#sbPill.bad i{background:#e04545}#sbPill button{font:inherit;border:0;border-radius:8px;padding:3px 8px;cursor:pointer;background:#ff7a18;color:#1a1206}@media print{#sbPill,#sbChatBtn,#sbChat{display:none!important}}";
-  document.head.appendChild(st);pill=document.createElement("div");pill.id="sbPill";
-  pill.innerHTML='<i></i><span id="sbTxt"></span><button type="button" id="sbReload" hidden>Reload</button><button type="button" id="sbOut">Sign out</button>';
-  document.body.appendChild(pill);
-  pill.querySelector("#sbReload").onclick=function(){location.reload()};
-  pill.querySelector("#sbOut").onclick=function(){try{SS.removeItem(SK)}catch(e){}location.reload()}}
-function status(t,c){ui();pill.className=c||"";pill.querySelector("#sbTxt").textContent=t}
-function loginUI(msg){if(document.getElementById("sbLogin"))return;var o=document.createElement("div");o.id="sbLogin";
-  o.style.cssText="position:fixed;inset:0;z-index:2147483000;background:#071a33;display:grid;place-items:center;padding:16px;font-family:Montserrat,'Segoe UI',Arial,sans-serif";
-  var inp="font:600 14px inherit;border:1px solid #c9d6ea;border-radius:10px;padding:11px;width:100%";
-  o.innerHTML='<form id="sbForm" style="background:#fff;border-radius:16px;padding:26px;width:100%;max-width:360px;display:grid;gap:12px"><div style="font-weight:900;font-size:18px;color:#071a33">SEAPOL <span style="color:#ff7a18">REPORT HUB</span></div><div style="font-size:13px;color:#5b6b86">Sign in to load and sync your reports</div><input id="sbE" type="email" placeholder="Email" required autocomplete="username" style="'+inp+'"><input id="sbP" type="password" placeholder="Password" required autocomplete="current-password" style="'+inp+'"><button type="submit" style="font:800 14px inherit;border:0;border-radius:10px;padding:12px;background:#ff7a18;color:#1a1206;cursor:pointer">Sign in</button><div id="sbM" style="font-size:12.5px;color:#c0392b;min-height:16px"></div></form>';
-  document.body.appendChild(o);var m=o.querySelector("#sbM");m.textContent=msg||"";
-  o.querySelector("#sbForm").onsubmit=function(e){e.preventDefault();m.style.color="#5b6b86";m.textContent="Signing in...";
-    asyncReq("POST","/auth/v1/token?grant_type=password",{email:o.querySelector("#sbE").value.trim(),password:o.querySelector("#sbP").value},{},true).then(function(r){
+/* ---------- status (shown by the account menu) + sign-in card ---------- */
+var ROLE="editor", RO=false, needReload=false;
+function status(t,c){var s={text:t,cls:c||"",reload:needReload};window.__SBSTATE=s;try{window.dispatchEvent(new CustomEvent("hubstatus",{detail:s}))}catch(e){}}
+function signOut(){try{SS.removeItem(SK);SS.removeItem("sbsync.logged")}catch(e){}location.reload()}
+function card(inner){if(document.getElementById("sbLogin"))return null;
+  var st=document.createElement("style");
+  st.textContent="#sbLogin{position:fixed;inset:0;z-index:2147483000;background:radial-gradient(1200px 600px at 15% 10%,#0f3a6e 0,#071a33 55%,#040f1f 100%);display:grid;place-items:center;padding:16px;font-family:Montserrat,'Segoe UI',Arial,sans-serif;overflow:auto}#sbLogin .c{background:#fff;border-radius:18px;padding:30px 28px 22px;width:100%;max-width:400px;box-shadow:0 24px 70px rgba(0,0,0,.5);border-top:5px solid #ff7a18}#sbLogin .lg{display:flex;align-items:center;gap:12px;margin-bottom:6px}#sbLogin .mk{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#ff7a18,#ff9d4d);display:grid;place-items:center;color:#071a33;font-weight:900;font-size:20px}#sbLogin .bn{font-weight:900;font-size:19px;color:#071a33;letter-spacing:.02em;line-height:1.1}#sbLogin .bn span{color:#ff7a18}#sbLogin .tg{font-size:12.5px;color:#5b6b86;margin:2px 0 18px}#sbLogin label{display:block;font-size:11.5px;font-weight:700;color:#34496b;margin:12px 0 5px}#sbLogin .f{position:relative}#sbLogin input{width:100%;font:600 14px inherit;border:1.5px solid #c9d6ea;border-radius:10px;padding:12px;color:#071a33;background:#fff;box-sizing:border-box}#sbLogin input:focus{outline:0;border-color:#1b75bb;box-shadow:0 0 0 3px rgba(27,117,187,.18)}#sbLogin .sh{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#1b75bb;font:700 12px inherit;cursor:pointer;padding:6px}#sbLogin .go{width:100%;margin-top:18px;font:800 14px inherit;border:0;border-radius:10px;padding:13px;background:#ff7a18;color:#1a1206;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:8px}#sbLogin .go:disabled{opacity:.7;cursor:wait}#sbLogin .sp{width:14px;height:14px;border:2px solid rgba(26,18,6,.3);border-top-color:#1a1206;border-radius:50%;animation:sbspin .7s linear infinite}@keyframes sbspin{to{transform:rotate(360deg)}}#sbLogin .m{min-height:18px;margin-top:12px;font-size:12.5px;color:#c0392b}#sbLogin .ft{margin-top:12px;padding-top:12px;border-top:1px solid #edf1f7;font-size:11px;color:#7d8aa3;text-align:center}";
+  document.head.appendChild(st);
+  var o=document.createElement("div");o.id="sbLogin";
+  o.innerHTML='<div class="c"><div class="lg"><div class="mk">'+BRAND.charAt(0)+'</div><div class="bn">'+BRAND+' <span>'+BRAND_SUB+'</span></div></div>'+inner+'<div class="ft">Authorised users only \u2022 Activity is recorded</div></div>';
+  document.body.appendChild(o);return o}
+function loginUI(msg){var o=card('<div class="tg">Sign in to open your reports</div><form id="sbForm"><label for="sbE">Email</label><div class="f"><input id="sbE" type="email" required autocomplete="username" placeholder="name@company.com"></div><label for="sbP">Password</label><div class="f"><input id="sbP" type="password" required autocomplete="current-password" placeholder="Your password"><button type="button" class="sh" id="sbS">Show</button></div><button type="submit" class="go" id="sbG">Sign in</button><div class="m" id="sbM" role="alert" aria-live="polite"></div></form>');
+  if(!o)return;var m=o.querySelector("#sbM"),g=o.querySelector("#sbG"),p=o.querySelector("#sbP");m.textContent=msg||"";
+  o.querySelector("#sbS").onclick=function(){var h=p.type==="password";p.type=h?"text":"password";this.textContent=h?"Hide":"Show"};
+  o.querySelector("#sbE").focus();
+  o.querySelector("#sbForm").onsubmit=function(e){e.preventDefault();m.style.color="#5b6b86";m.textContent="";g.disabled=true;g.innerHTML='<span class="sp"></span>Signing in';
+    asyncReq("POST","/auth/v1/token?grant_type=password",{email:o.querySelector("#sbE").value.trim(),password:p.value},{},true).then(function(r){
       if(r.status===200){sess=saveToken(JSON.parse(r.text));location.reload()}
-      else{m.style.color="#c0392b";m.textContent="Wrong email or password."}
-    }).catch(function(){m.style.color="#c0392b";m.textContent="No connection. Try again."})}}
-function authLost(){authed=false;status("Signed out","bad");loginUI("Session expired. Sign in again. Unsent changes are kept and will upload.")}
+      else{throw new Error("cred")}
+    }).catch(function(er){m.style.color="#c0392b";m.textContent=er&&er.message==="cred"?"Wrong email or password.":"Cannot reach the server. Check the internet connection and try again.";g.disabled=false;g.textContent="Sign in"})}}
+function noAccess(){var o=card('<div class="tg">Your account is not active</div><div style="font-size:13px;color:#34496b;line-height:1.5">You are signed in, but an administrator has not given this account access to the reports yet. Please contact your administrator.</div><button type="button" class="go" id="sbO">Sign out</button>');if(o)o.querySelector("#sbO").onclick=signOut}
+function authLost(){authed=false;status("Signed out","bad");loginUI("Your session expired. Please sign in again. Unsent changes are kept and will upload.")}
 
 /* ---------- write-through: every localStorage write/remove goes to Supabase ---------- */
-function mark(k,op){if(!authed||LOCAL_ONLY[k])return;pending[k]=op;sset(PK,pending);clearTimeout(timers.f);timers.f=setTimeout(flush,700)}
+function mark(k,op){if(!authed||RO||LOCAL_ONLY[k])return;pending[k]=op;sset(PK,pending);clearTimeout(timers.f);timers.f=setTimeout(flush,700)}
 function installPatch(w){try{var P=w.Storage.prototype,ls=w.localStorage,s0=P.setItem,r0=P.removeItem;
   if(P.__sb)return;P.__sb=1;
-  P.setItem=function(k,v){s0.call(this,k,v);if(this===ls)mark(String(k),"set")};
-  P.removeItem=function(k){r0.call(this,k);if(this===ls)mark(String(k),"del")}}catch(e){}}
+  P.setItem=function(k,v){if(RO&&this===ls&&!LOCAL_ONLY[String(k)])return;s0.call(this,k,v);if(this===ls)mark(String(k),"set")};
+  P.removeItem=function(k){if(RO&&this===ls&&!LOCAL_ONLY[String(k)])return;r0.call(this,k);if(this===ls)mark(String(k),"del")}}catch(e){}}
 installPatch(window);window.__sbPatch=installPatch;
 /* tabs are srcdoc iframes: give each one the same hook as it is created (no change to the tab pages) */
 try{var d=Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype,"srcdoc");
@@ -104,10 +106,10 @@ function push(k){var op=pending[k],val=lget(k),req;
     if(r.status>=200&&r.status<300){if(pending[k]===op&&lget(k)===val){delete pending[k];sset(PK,pending)}}
     else if(r.status===401)throw new Error("auth");else throw new Error("http "+r.status)})}
 function flush(){if(busy||!authed)return;var keys=Object.keys(pending);
-  if(!keys.length){if(!offline)status("Synced \u2022 "+(sess&&sess.email||""));return}
+  if(!keys.length){if(!offline)status("Synced");return}
   busy=true;status("Saving...","warn");
   ensureToken().then(function(){return keys.reduce(function(p,k){return p.then(function(){return push(k)})},Promise.resolve())})
-  .then(function(){offline=false;status("Synced \u2022 "+(sess&&sess.email||""))})
+  .then(function(){offline=false;status("Synced")})
   .catch(function(e){if(e&&e.message==="auth"){authLost()}else{offline=true;status("Offline - will retry","bad");clearTimeout(timers.r);timers.r=setTimeout(flush,10000)}})
   .then(function(){busy=false;if(authed&&!offline&&Object.keys(pending).length)timers.f=setTimeout(flush,700)})}
 
@@ -134,23 +136,211 @@ function poll(){if(!authed||busy)return;
   .then(function(r){if(r.status!==200)return;var rows=JSON.parse(r.text),ch=false;
     rows.forEach(function(row){if(row.updated_at>lastTs)lastTs=row.updated_at;
       if(LOCAL_ONLY[row.key]||pending[row.key])return;if(lget(row.key)!==row.value){lset(row.key,row.value);ch=true}});
-    if(ch){status("Updated by a colleague","warn");pill.querySelector("#sbReload").hidden=false;
+    if(ch){needReload=true;status("Updated by a colleague","warn");
       try{window.__hubDashRefresh&&window.__hubDashRefresh()}catch(e){}}})
   .catch(function(e){if(e&&e.message==="auth")authLost()})}
 
 /* ---------- start ---------- */
+function loadProfile(){var u="/rest/v1/profiles?select=role,active&id=eq."+encodeURIComponent((sess&&sess.uid)||""),r=syncReq("GET",u);
+  if(r.status===401&&refreshSync())r=syncReq("GET",u);
+  if(r.status===401)return"auth";
+  if(r.status===200){var a;try{a=JSON.parse(r.text)}catch(e){return"legacy"}if(!a.length||!a[0].active)return"none";ROLE=a[0].role;return"ok"}
+  return"legacy"}   /* roles table not created yet: everyone can edit, as before */
 if(!sess||!sess.refresh_token){loginUI();return}
 if(expired(sess)){sess=refreshSync();if(!sess){loginUI("Please sign in.");return}}
-authed=true;status("Connecting...","warn");
+var pr=loadProfile();
+if(pr==="auth"){try{SS.removeItem(SK)}catch(e){}loginUI("Please sign in again.");return}
+if(pr==="none"){noAccess();return}
+if(pr==="legacy")ROLE="editor";
+RO=ROLE==="viewer";authed=true;status("Connecting...","warn");
 var h=hydrate();
+if(RO){pending={};sset(PK,pending)}
 if(h==="auth"){authed=false;try{SS.removeItem(SK)}catch(e){}loginUI("Please sign in again.");return}
-if(h==="fail"){offline=true;status("Offline - using this device's copy","bad");timers.r=setTimeout(flush,10000)}
-else{status("Synced \u2022 "+(sess.email||""));flush()}
+if(h==="fail"){offline=true;status("Offline - using this device's copy","bad");if(!RO)timers.r=setTimeout(flush,10000)}
+else{status(RO?"Read-only account":"Synced","");if(!RO)flush()}
+if(!SS.getItem("sbsync.logged")){try{SS.setItem("sbsync.logged","1")}catch(e){}asyncReq("POST","/rest/v1/rpc/log_login",{}).catch(function(){})}
+window.__SB={email:sess.email||"",uid:sess.uid||"",role:ROLE,ro:RO,legacy:pr==="legacy",chat:ENABLE_CHAT,signOut:signOut,
+  req:function(m,p,b,x){return ensureToken().then(function(){return asyncReq(m,p,b,x)})}};
 setInterval(poll,POLL_MS);
-document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();flush()}});
-if(ENABLE_CHAT)window.__SBAPI={me:{uid:sess.uid||"",email:sess.email||""},req:function(m,p,b,x){return ensureToken().then(function(){return asyncReq(m,p,b,x)})}};
+document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();if(!RO)flush()}});
 })();
 /* ===== END SUPABASE SYNC LAYER ===== */
+</script>
+<script>
+/* ===== HUB TOOLS: account menu, Excel export, search, alerts, admin (added; existing hub code is untouched) ===== */
+(function(){
+"use strict";
+var ALERT_DROP_PCT=10;   /* alert when net position falls by this % or more since the previous saved day */
+var LK="lin.hist.v1",AK="sfr.hist.v1",FK="fnp.hist.v1",GK="cag.hist.v1";
+function lsj(k){try{var v=JSON.parse(localStorage.getItem(k)||"{}");return v&&typeof v==="object"?v:{}}catch(e){return{}}}
+function load(){return{L:lsj(LK),A:lsj(AK),F:lsj(FK),G:lsj(GK)}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function num(x){return+x||0}
+function inr(n){n=Math.round(+n||0);var g=n<0,s=String(Math.abs(n)),l=s.slice(-3),r=s.slice(0,-3);if(r)l=r.replace(/\B(?=(\d{2})+(?!\d))/g,",")+","+l;return(g?"-":"")+"\u20b9"+l}
+function fd(k){var p=String(k).split("-");return p.length===3?p[2]+"-"+p[1]+"-"+p[0]:k}
+function keys(o){return Object.keys(o).filter(function(k){return/^\d{4}-\d{2}-\d{2}$/.test(k)}).sort()}
+function rowsOf(e){return e&&(e.rows||(e.m&&e.m.rows))||[]}
+function nameOf(x){return x&&(x.n||x.name||x.cust)||"-"}
+function SB(){return window.__SB||null}
+
+/* ---------- styles ---------- */
+var CSS="#hvChip{position:fixed;left:12px;bottom:12px;z-index:2147481200;display:flex;align-items:center;gap:8px;background:#071a33;color:#dbe6f7;border:0;border-radius:999px;padding:5px 12px 5px 5px;font:600 12px Montserrat,'Segoe UI',Arial,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:calc(100vw - 70px)}#hvChip .av{position:relative;width:26px;height:26px;border-radius:50%;background:#ff7a18;color:#1a1206;display:grid;place-items:center;font-weight:900;font-size:12px}#hvChip .av i{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;background:#1fa855;border:2px solid #071a33}#hvChip.warn .av i{background:#ff7a18}#hvChip.bad .av i{background:#e04545}#hvChip.off .av i{background:#7d8aa3}#hvChip .av b{position:absolute;top:-6px;left:-6px;min-width:15px;height:15px;border-radius:8px;background:#e04545;color:#fff;font:800 9.5px/15px sans-serif;text-align:center;padding:0 3px}"+
+"#hvMenu{position:fixed;left:12px;bottom:56px;z-index:2147481300;width:270px;background:#fff;border-radius:14px;box-shadow:0 12px 36px rgba(7,26,51,.4);padding:8px;font:13px Montserrat,'Segoe UI',Arial,sans-serif;color:#1b2a41;display:none}#hvMenu.on{display:block}#hvMenu .who{padding:8px 10px 10px;border-bottom:1px solid #edf1f7;margin-bottom:6px}#hvMenu .who b{display:block;word-break:break-all;font-size:13px}#hvMenu .rl{display:inline-block;margin-top:4px;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:99px;background:#eef3f9;color:#34496b}#hvMenu .rl.admin{background:#ffe8d4;color:#8a4300}#hvMenu .st{font-size:11.5px;color:#6b7a93;margin-top:4px}#hvMenu button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;border:0;background:none;padding:9px 10px;border-radius:8px;font:600 13px inherit;color:#1b2a41;cursor:pointer;text-align:left}#hvMenu button:hover{background:#f1f5fa}#hvMenu button i{font-style:normal;background:#e04545;color:#fff;font-size:11px;font-weight:800;border-radius:99px;padding:1px 7px}#hvMenu button kbd{font:600 10.5px inherit;color:#6b7a93;background:#eef3f9;border-radius:5px;padding:2px 6px}#hvMenu hr{border:0;border-top:1px solid #edf1f7;margin:6px 0}"+
+"#hvTo{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147481900;background:#071a33;color:#fff;font:600 13px Montserrat,'Segoe UI',Arial,sans-serif;padding:10px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;align-items:center;gap:12px;max-width:calc(100vw - 24px)}#hvTo.on{display:flex}#hvTo button{border:0;border-radius:8px;background:#ff7a18;color:#1a1206;font:800 12px inherit;padding:5px 10px;cursor:pointer}"+
+"#hvMo{position:fixed;inset:0;z-index:2147481800;background:rgba(4,15,31,.55);display:none;place-items:center;padding:14px;font:13px Montserrat,'Segoe UI',Arial,sans-serif;color:#1b2a41}#hvMo.on{display:grid}#hvMo .b{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45)}#hvMo .b.w{max-width:760px}#hvMo header{display:flex;align-items:center;gap:10px;padding:13px 16px;background:linear-gradient(135deg,#071a33,#0d2b52);color:#fff;border-bottom:3px solid #ff7a18}#hvMo header b{flex:1;font-size:14px}#hvMo header button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:15px}#hvBd{padding:14px 16px;overflow:auto}"+
+"#hvBd table{border-collapse:collapse;width:100%;font-size:12.5px}#hvBd th{background:#eef3f9;color:#34496b;text-align:left;padding:7px 8px;font-size:11.5px}#hvBd td{padding:7px 8px;border-top:1px solid #edf1f7;vertical-align:middle}#hvBd .tw{overflow-x:auto}#hvBd select,#hvBd input[type=text]{font:inherit;border:1px solid #c9d6ea;border-radius:8px;padding:6px}#hvBd .tb{display:flex;gap:6px;margin-bottom:12px}#hvBd .tb button{border:1px solid #c9d6ea;background:#fff;border-radius:99px;padding:6px 14px;font:700 12px inherit;cursor:pointer;color:#34496b}#hvBd .tb button.on{background:#071a33;color:#fff;border-color:#071a33}#hvBd .bt{border:0;border-radius:8px;background:#ff7a18;color:#1a1206;font:800 12px inherit;padding:6px 12px;cursor:pointer}#hvBd .mu{color:#6b7a93;font-size:12px}"+
+"#hvBd .al{display:flex;gap:10px;padding:10px 0;border-top:1px solid #edf1f7}#hvBd .al:first-child{border-top:0}#hvBd .al i{flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:#1b75bb}#hvBd .al.high i{background:#e04545}#hvBd .al.warn i{background:#ff7a18}"+
+"#hvQ{width:100%;box-sizing:border-box;font:600 15px inherit;border:1.5px solid #c9d6ea;border-radius:10px;padding:12px;margin-bottom:10px}#hvQ:focus{outline:0;border-color:#1b75bb}#hvBd .rs{padding:10px 4px;border-top:1px solid #edf1f7;display:flex;gap:10px;align-items:flex-start}#hvBd .rs:first-of-type{border-top:0}#hvBd .rs>div{flex:1;min-width:0}#hvBd .rs b{display:block;word-break:break-word}#hvBd .tg{display:inline-block;font-size:10.5px;font-weight:800;padding:1px 8px;border-radius:99px;background:#eef3f9;color:#34496b;margin-left:6px}"+
+"body.pres #hvChip,body.pres #hvMenu{display:none!important}@media print{#hvChip,#hvMenu,#hvTo,#hvMo{display:none!important}}";
+var st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
+function el(t,id,cls){var e=document.createElement(t);if(id)e.id=id;if(cls)e.className=cls;return e}
+
+/* ---------- toast + modal ---------- */
+var TO=el("div","hvTo"),tt;document.body.appendChild(TO);
+function toast(msg,label,fn){TO.innerHTML="";var s=el("span");s.textContent=msg;TO.appendChild(s);
+  if(label){var b=el("button");b.type="button";b.textContent=label;b.onclick=function(){TO.classList.remove("on");fn&&fn()};TO.appendChild(b)}
+  TO.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){TO.classList.remove("on")},label?9000:4500)}
+var MO=el("div","hvMo");MO.innerHTML='<div class="b"><header><b id="hvTi"></b><button type="button" id="hvX" aria-label="Close">\u2715</button></header><div id="hvBd"></div></div>';document.body.appendChild(MO);
+var BD=MO.querySelector("#hvBd");
+function modal(title,wide){MO.querySelector("#hvTi").textContent=title;MO.querySelector(".b").className="b"+(wide?" w":"");BD.innerHTML="";MO.classList.add("on");return BD}
+function closeModal(){MO.classList.remove("on")}
+MO.querySelector("#hvX").onclick=closeModal;MO.addEventListener("mousedown",function(e){if(e.target===MO)closeModal()});
+
+/* ---------- Excel export (real .xlsx, built in the browser) ---------- */
+var CT=(function(){var t=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc(u){var c=0xFFFFFFFF;for(var i=0;i<u.length;i++)c=CT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function zip(files){var enc=new TextEncoder(),parts=[],cen=[],off=0;
+  files.forEach(function(f){var nm=enc.encode(f.name),d=enc.encode(f.text),c=crc(d),h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer),nm,d);
+    var g=new DataView(new ArrayBuffer(46));g.setUint32(0,0x02014b50,true);g.setUint16(4,20,true);g.setUint16(6,20,true);g.setUint16(8,0x0800,true);g.setUint16(14,0x21,true);g.setUint32(16,c,true);g.setUint32(20,d.length,true);g.setUint32(24,d.length,true);g.setUint16(28,nm.length,true);g.setUint32(42,off,true);
+    cen.push(new Uint8Array(g.buffer),nm);off+=30+nm.length+d.length});
+  var cs=0;cen.forEach(function(p){cs+=p.length});var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob(parts.concat(cen,[new Uint8Array(e.buffer)]),{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+function xe(s){return String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function colL(i){var s="";i++;while(i>0){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
+function serial(k){var p=k.split("-");return Math.round((Date.UTC(+p[0],+p[1]-1,+p[2])-Date.UTC(1899,11,30))/864e5)}
+function sheetXml(sh){var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>';
+  sh.head.forEach(function(h,i){x+='<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+(sh.w[i]||16)+'" customWidth="1"/>'});x+='</cols><sheetData><row r="1">';
+  sh.head.forEach(function(h,i){x+='<c r="'+colL(i)+'1" s="1" t="inlineStr"><is><t>'+xe(h)+'</t></is></c>'});x+="</row>";
+  sh.rows.forEach(function(r,ri){x+='<row r="'+(ri+2)+'">';r.forEach(function(v,i){var ref=colL(i)+(ri+2),t=sh.t[i];
+    if(v===""||v==null)return;
+    if(t==="d")x+='<c r="'+ref+'" s="3"><v>'+serial(v)+'</v></c>';else if(t==="n")x+='<c r="'+ref+'" s="2"><v>'+(+v||0)+'</v></c>';else x+='<c r="'+ref+'" t="inlineStr"><is><t>'+xe(v)+'</t></is></c>'});x+="</row>"});
+  return x+'</sheetData><autoFilter ref="A1:'+colL(sh.head.length-1)+(sh.rows.length+1)+'"/></worksheet>'}
+function sheets(S){var out=[],ka=keys(S.A),kl=keys(S.L);
+  function add(name,head,t,w,rows){if(rows.length)out.push({name:name,head:head,t:t,w:w,rows:rows})}
+  add("Air - Daily",["Date","Bank","Debtors","Creditors","Net position","Lien","Free balance"],["d","n","n","n","n","n","n"],[13,16,16,16,16,16,16],ka.map(function(k){var e=S.A[k];return[k,e.bank,e.deb,e.cred,e.net,e.lien,e.free]}));
+  add("Lines - Daily",["Date","Bank","Debtors","Creditors","Net position"],["d","n","n","n","n"],[13,16,16,16,16],kl.map(function(k){var e=S.L[k];return[k,e.bank,e.deb,e.cred,e.net]}));
+  var bk=[],ld=[],lc=[],ad=[],ac=[];
+  kl.forEach(function(k){var m=S.L[k].m||{};(m.bank||[]).forEach(function(b){bk.push([k,b.name,b.div,b.amt,b.lien?"Yes":""])});(m.deb||[]).forEach(function(x){ld.push([k,nameOf(x),x.tot])});(m.cred||[]).forEach(function(x){lc.push([k,nameOf(x),x.tot])})});
+  ka.forEach(function(k){var e=S.A[k];if(e.dc)Object.keys(e.dc).forEach(function(n){ad.push([k,n,e.dc[n]])});if(e.cc)Object.keys(e.cc).forEach(function(n){ac.push([k,n,e.cc[n]])})});
+  add("Lines - Banks",["Date","Bank","Division","Amount","Lien"],["d","t","t","n","t"],[13,30,14,16,8],bk);
+  add("Lines - Debtors",["Date","Party","Amount"],["d","t","n"],[13,40,16],ld);
+  add("Lines - Creditors",["Date","Party","Amount"],["d","t","n"],[13,40,16],lc);
+  add("Air - Debtors",["Date","Party","Amount"],["d","t","n"],[13,40,16],ad);
+  add("Air - Creditors",["Date","Party","Amount"],["d","t","n"],[13,40,16],ac);
+  var fn=[];keys(S.F).forEach(function(k){var e=S.F[k],c=e.cats||{};Object.keys(c).forEach(function(n){fn.push([k,e.remit||"",n,c[n]])})});
+  add("FN Payable",["Date","Fortnight","Category","Payable"],["d","t","t","n"],[13,22,28,16],fn);
+  var ag=[];keys(S.G).forEach(function(k){rowsOf(S.G[k]).forEach(function(r){ag.push([k,nameOf(r),r.net])})});
+  add("Customer Ageing",["Date","Customer","Net outstanding"],["d","t","n"],[13,40,18],ag);
+  return out}
+function buildXlsx(S){var sh=sheets(S);if(!sh.length)return null;var f=[],ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
+  wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>',
+  rl='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+  sh.forEach(function(s,i){var n=i+1;ct+='<Override PartName="/xl/worksheets/sheet'+n+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    wb+='<sheet name="'+xe(s.name)+'" sheetId="'+n+'" r:id="rId'+n+'"/>';rl+='<Relationship Id="rId'+n+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+n+'.xml"/>';
+    f.push({name:"xl/worksheets/sheet"+n+".xml",text:sheetXml(s)})});
+  rl+='<Relationship Id="rId'+(sh.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  f.unshift({name:"[Content_Types].xml",text:ct+"</Types>"},
+   {name:"_rels/.rels",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+   {name:"xl/workbook.xml",text:wb+"</sheets></workbook>"},{name:"xl/_rels/workbook.xml.rels",text:rl},
+   {name:"xl/styles.xml",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="dd\\-mm\\-yyyy"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF071A33"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'});
+  return zip(f)}
+function exportXlsx(){var b=buildXlsx(load());if(!b){toast("Nothing to export yet. Save a report first.");return}
+  var d=new Date(),n="SEAPOL-Reports-"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+".xlsx",a=el("a");
+  a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500);toast("Excel file downloaded: "+n)}
+window.__hubBuildXlsx=buildXlsx;
+
+/* ---------- alerts ---------- */
+function alerts(){var S=load(),out=[];
+  [["Air Division",S.A],["Seaport Lines",S.L]].forEach(function(p){var o=p[1],ks=keys(o);if(!ks.length)return;var k=ks[ks.length-1],e=o[k],pk=ks.length>1?ks[ks.length-2]:null;
+    if(pk){var d=num(e.net)-num(o[pk].net),base=Math.abs(num(o[pk].net)),pc=base?-d/base*100:0;
+      if(d<0&&pc>=ALERT_DROP_PCT)out.push({l:pc>=2*ALERT_DROP_PCT?"high":"warn",t:p[0]+": net position fell "+pc.toFixed(1)+"% ("+inr(-d)+") since "+fd(pk)+"."})}
+    if(num(e.cred)>num(e.bank)&&num(e.cred)>0)out.push({l:"warn",t:p[0]+": creditors ("+inr(e.cred)+") are higher than the bank balance ("+inr(e.bank)+") on "+fd(k)+"."});
+    var days=Math.floor((Date.now()-new Date(k+"T00:00:00").getTime())/864e5);
+    if(days>=2)out.push({l:"info",t:p[0]+": the latest saved report is "+fd(k)+" ("+days+" days ago)."})});
+  return out}
+window.__hubAlerts=alerts;
+function showAlerts(){var a=alerts(),b=modal("Alerts");
+  b.innerHTML=a.length?a.map(function(x){return'<div class="al '+x.l+'"><i></i><div>'+esc(x.t)+"</div></div>"}).join("")+'<div class="mu" style="margin-top:10px">Net-position alert level: '+ALERT_DROP_PCT+'% drop since the previous saved day.</div>':'<div class="mu">No alerts. Everything looks normal.</div>'}
+
+/* ---------- search across all saved days ---------- */
+function index(S){var m={};
+  function add(t,d,n,k,v){var id=t+"|"+d+"|"+String(n).toLowerCase(),r=m[id]||(m[id]={t:t,d:d,n:String(n),p:{}});r.p[k]=v}
+  keys(S.L).forEach(function(k){var e=S.L[k].m||{};(e.deb||[]).forEach(function(x){add("Debtor","Lines",nameOf(x),k,num(x.tot))});(e.cred||[]).forEach(function(x){add("Creditor","Lines",nameOf(x),k,num(x.tot))});(e.bank||[]).forEach(function(b){add("Bank","Lines",b.name||"-",k,num(b.amt))})});
+  keys(S.A).forEach(function(k){var e=S.A[k];if(e.dc)Object.keys(e.dc).forEach(function(n){add("Debtor","Air",n,k,num(e.dc[n]))});if(e.cc)Object.keys(e.cc).forEach(function(n){add("Creditor","Air",n,k,num(e.cc[n]))})});
+  keys(S.G).forEach(function(k){rowsOf(S.G[k]).forEach(function(r){add("Customer","Ageing",nameOf(r),k,num(r.net))})});
+  return Object.keys(m).map(function(i){return m[i]})}
+var TABS={Lines:"lines",Air:"financial",Ageing:"ageing"};
+function openTab(d){var b=document.querySelector('[data-k="'+TABS[d]+'"]');if(b){closeModal();b.click()}}
+function openSearch(){var b=modal("Search saved reports",true),inp=el("input","hvQ");inp.type="text";inp.placeholder="Type a party, bank or customer name";inp.setAttribute("aria-label","Search");
+  var out=el("div");b.appendChild(inp);b.appendChild(out);var idx=index(load());inp.focus();
+  function run(){var q=inp.value.toLowerCase().trim(),tk=q.split(/\s+/).filter(Boolean);
+    if(q.length<2){out.innerHTML='<div class="mu">Searches debtors, creditors, banks and customers across every saved day.</div>';return}
+    var r=idx.filter(function(x){var n=x.n.toLowerCase();return tk.every(function(w){return n.indexOf(w)>=0})}).sort(function(a,b){var an=a.n.toLowerCase().indexOf(tk[0])===0?0:1,bn=b.n.toLowerCase().indexOf(tk[0])===0?0:1;return an-bn||a.n.localeCompare(b.n)}).slice(0,15);
+    out.innerHTML=r.length?"":'<div class="mu">No match.</div>';
+    r.forEach(function(x){var ks=Object.keys(x.p).sort(),last=ks[ks.length-1],h=ks.slice(-5).map(function(k){return fd(k).slice(0,5)+": "+inr(x.p[k])}).join(" \u2022 "),d=el("div",null,"rs");
+      d.innerHTML='<div><b>'+esc(x.n)+'<span class="tg">'+x.t+" \u2022 "+x.d+'</span></b><span class="mu">Latest '+fd(last)+": <b style=\"display:inline\">"+inr(x.p[last])+'</b></span><br><span class="mu">'+esc(h)+'</span></div><button type="button" class="bt">Open tab</button>';
+      d.querySelector("button").onclick=function(){openTab(x.d)};out.appendChild(d)})}
+  inp.oninput=run;run()}
+
+/* ---------- admin: users and activity ---------- */
+function admErr(r,b){b.innerHTML='<div class="mu">'+(r&&r.status===404?"Run <b>seapol-supabase-upgrade-v2.sql</b> in Supabase first.":"Could not load this ("+(r?r.status:"offline")+").")+"</div>"}
+function openAdmin(){var s=SB();if(!s||s.role!=="admin")return;var b=modal("Users & activity",true),tb=el("div",null,"tb"),body=el("div");
+  tb.innerHTML='<button type="button" class="on" data-t="u">Users</button><button type="button" data-t="a">Activity log</button>';b.appendChild(tb);b.appendChild(body);
+  function users(){body.innerHTML='<div class="mu">Loading...</div>';
+    s.req("GET","/rest/v1/profiles?select=id,email,role,active,last_login&order=email.asc").then(function(r){if(r.status!==200)return admErr(r,body);var a=JSON.parse(r.text);
+      body.innerHTML='<div class="tw"><table><thead><tr><th>Email</th><th>Role</th><th>Active</th><th>Last sign-in</th><th></th></tr></thead><tbody></tbody></table></div><div class="mu" style="margin-top:10px">Viewer: can read and print. Editor: can also paste and save reports. Admin: can also manage users. New accounts start as Viewer.</div>';
+      var tbd=body.querySelector("tbody");a.forEach(function(u){var tr=el("tr"),me=u.id===s.uid;
+        tr.innerHTML="<td>"+esc(u.email)+(me?' <span class="tg">You</span>':"")+'</td><td><select'+(me?" disabled":"")+'><option>admin</option><option>editor</option><option>viewer</option></select></td><td><input type="checkbox"'+(u.active?" checked":"")+(me?" disabled":"")+'></td><td class="mu">'+(u.last_login?new Date(u.last_login).toLocaleString([],{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"-")+"</td><td></td>";
+        var sel=tr.querySelector("select"),ck=tr.querySelector("input");sel.value=u.role;
+        if(!me){var bt=el("button",null,"bt");bt.type="button";bt.textContent="Save";bt.onclick=function(){bt.disabled=true;
+          s.req("PATCH","/rest/v1/profiles?id=eq."+encodeURIComponent(u.id),{role:sel.value,active:ck.checked},{Prefer:"return=minimal"}).then(function(r){bt.disabled=false;
+            if(r.status>=200&&r.status<300)toast("Saved: "+u.email);else{var m="";try{m=JSON.parse(r.text).message}catch(e){}toast(m||"Could not save ("+r.status+")")}}).catch(function(){bt.disabled=false;toast("No connection")})};tr.lastChild.appendChild(bt)}
+        tbd.appendChild(tr)})}).catch(function(){admErr(null,body)})}
+  function act(){body.innerHTML='<div class="mu">Loading...</div>';
+    s.req("GET","/rest/v1/activity_log?select=at,email,action,detail&order=id.desc&limit=100").then(function(r){if(r.status!==200)return admErr(r,body);var a=JSON.parse(r.text);
+      body.innerHTML=a.length?'<div class="tw"><table><thead><tr><th>When</th><th>User</th><th>Action</th><th>Item</th></tr></thead><tbody>'+a.map(function(x){return"<tr><td class=\"mu\">"+new Date(x.at).toLocaleString([],{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})+"</td><td>"+esc(x.email||"-")+"</td><td>"+esc(x.action)+"</td><td class=\"mu\">"+esc(x.detail||"")+"</td></tr>"}).join("")+'</tbody></table></div><div class="mu" style="margin-top:10px">Latest 100 entries.</div>':'<div class="mu">No activity yet.</div>'}).catch(function(){admErr(null,body)})}
+  tb.onclick=function(e){var t=e.target.closest("button");if(!t)return;[].forEach.call(tb.children,function(x){x.classList.toggle("on",x===t)});t.dataset.t==="u"?users():act()};users()}
+
+/* ---------- account menu (bottom-left) ---------- */
+var chip=el("button","hvChip"),menu=el("div","hvMenu"),state={text:"Local mode",cls:"off",reload:false},shownReload=false;
+chip.type="button";chip.setAttribute("aria-haspopup","true");menu.setAttribute("role","menu");document.body.appendChild(chip);document.body.appendChild(menu);
+function initial(){var s=SB();return s&&s.email?s.email.charAt(0).toUpperCase():"S"}
+function paintChip(){var n=alerts().filter(function(a){return a.l!=="info"}).length;chip.className=state.cls||"";
+  chip.innerHTML='<span class="av">'+initial()+"<i></i>"+(n?"<b>"+n+"</b>":"")+'</span><span>'+esc(state.text)+"</span>";chip.title=SB()?SB().email:"Local mode"}
+function paintMenu(){var s=SB(),a=alerts().filter(function(x){return x.l!=="info"}).length,h="";
+  h+='<div class="who"><b>'+esc(s?s.email:"Not signed in")+"</b>"+(s?'<span class="rl '+s.role+'">'+(s.role==="admin"?"Admin":s.role==="viewer"?"Viewer (read-only)":"Editor")+"</span>":'<span class="rl">Local mode</span>')+'<div class="st">'+esc(state.text)+"</div></div>";
+  h+='<button type="button" data-a="alerts" role="menuitem">Alerts'+(a?"<i>"+a+"</i>":"")+'</button><button type="button" data-a="search" role="menuitem">Search reports<kbd>Ctrl K</kbd></button><button type="button" data-a="export" role="menuitem">Export to Excel</button>';
+  if(s&&s.role==="admin")h+='<button type="button" data-a="admin" role="menuitem">Users &amp; activity</button>';
+  if(state.reload)h+='<button type="button" data-a="reload" role="menuitem">Reload to see updates<i>new</i></button>';
+  if(s)h+='<hr><button type="button" data-a="out" role="menuitem">Sign out</button>';menu.innerHTML=h}
+chip.onclick=function(e){e.stopPropagation();if(menu.classList.contains("on")){menu.classList.remove("on");return}paintMenu();menu.classList.add("on")};
+menu.onclick=function(e){var b=e.target.closest("button");if(!b)return;menu.classList.remove("on");var a=b.dataset.a;
+  if(a==="alerts")showAlerts();else if(a==="search")openSearch();else if(a==="export")exportXlsx();else if(a==="admin")openAdmin();else if(a==="reload")location.reload();else if(a==="out"&&SB())SB().signOut()};
+document.addEventListener("click",function(e){if(!menu.contains(e.target)&&e.target!==chip)menu.classList.remove("on")});
+document.addEventListener("keydown",function(e){
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==="k"||e.key==="K")){e.preventDefault();e.stopPropagation();openSearch()}
+  else if(e.key==="Escape"){if(MO.classList.contains("on"))closeModal();menu.classList.remove("on")}},true);
+function onStatus(s){state=s;paintChip();if(s.reload&&!shownReload){shownReload=true;toast("A colleague saved new data.","Reload",function(){location.reload()})}}
+window.addEventListener("hubstatus",function(e){onStatus(e.detail)});
+if(window.__SBSTATE)state=window.__SBSTATE;else if(SB())state={text:"Synced",cls:"",reload:false};
+paintChip();
+setTimeout(function(){paintChip();var hi=alerts().filter(function(a){return a.l!=="info"}),k="hv.alerts.shown";
+  try{if(hi.length&&!sessionStorage.getItem(k)){sessionStorage.setItem(k,"1");toast(hi.length+(hi.length>1?" alerts need":" alert needs")+" attention.","View",showAlerts)}}catch(e){}},2500);
+})();
+/* ===== END HUB TOOLS ===== */
 </script>
 <script>
 /* ===== HUB ASSISTANT: hidden side panel with Data Assistant + Team Chat (added; existing hub code is untouched) ===== */
@@ -186,7 +376,10 @@ function dates(t){var out=[],m,re=/\b(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})\b/g
   return out.filter(function(x,i){return out.indexOf(x)===i})}
 var STOP=("the what whats is are was show me give tell about of for on in at to and or a an my our please pls total top list all bank banks balance balances debtor debtors creditor creditors net position report reports summary status air lines line division date today yesterday latest last compare trend days day how much many who owes owed lien free customer customers ageing aging outstanding payable fn fortnight biggest largest highest major with from this that it do does can you i we us amount amounts details detail view see check").split(" ");
 function toks(t){return t.replace(/[^a-z0-9 ]+/g," ").split(/\s+/).filter(function(w){return w.length>2&&STOP.indexOf(w)<0&&!/^\d+$/.test(w)})}
-function hit(name,tk){if(!tk.length)return true;var n=String(name||"").toLowerCase();return tk.every(function(w){return n.indexOf(w)>=0})}
+function lev(a,b){var m=a.length,n=b.length;if(Math.abs(m-n)>2)return 9;var d=[],i,j;for(i=0;i<=m;i++)d[i]=[i];for(j=1;j<=n;j++)d[0][j]=j;
+  for(i=1;i<=m;i++)for(j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]}
+function hit(name,tk){if(!tk.length)return true;var n=String(name||"").toLowerCase(),ws=n.split(/[^a-z0-9]+/).filter(Boolean);
+  return tk.every(function(w){if(n.indexOf(w)>=0)return true;if(w.length<5)return false;var mx=w.length>=8?2:1;return ws.some(function(x){return lev(w,x)<=mx})})}
 
 /* ---------- answers ---------- */
 function aSummary(S,dv,date){var rows=[],notes=[],ks={};
@@ -250,14 +443,52 @@ function aFn(S,date){var r=resolve(S.F,date);if(!r.k)return"No FN Payable plan s
   return'<div class="hx-h">FN payable \u2022 '+esc(e.remit||fd(r.k))+"</div>"+tbl(["Category","Payable"],ks.map(function(k){return{c:[esc(k),inr(c[k])]}}).concat([{cls:"tot",c:["Total",inr(sum(ks.map(function(k){return num(c[k])})))]}]))}
 function aDates(S){var rows=[["Financial - Air",S.A],["Financial - Lines",S.L],["FN Payable",S.F],["Customer Ageing",S.G]].map(function(p){var ks=keys(p[1]);return{c:[p[0],String(ks.length),ks.length?fd(ks[0])+" to "+fd(ks[ks.length-1]):"-"]}});
   return'<div class="hx-h">Saved reports</div>'+tbl(["Report","Days","Range"],rows)}
-function aHelp(){return"Hello. I read the reports saved in this hub and answer from them. Try one of the questions below, or type your own, for example:<ul><li>net position on 24-11-2026</li><li>top 10 debtors in Lines</li><li>HDFC balance</li><li>compare with previous day</li><li>last 14 days trend</li></ul>"}
-function answer(q){var t=" "+q.toLowerCase().replace(/[?!]+/g," ")+" ",S=load(),dv=divs(t),dt=dates(t),d1=dt.length?dt[dt.length-1]:null,m;
+function pmap(e,d,kind){var o={};if(!e)return o;
+  if(d==="lines"){((e.m&&e.m[kind])||[]).forEach(function(x){o[x.n||x.name||"-"]=num(x.tot)})}
+  else{var mp=e[kind==="deb"?"dc":"cc"];if(mp)Object.keys(mp).forEach(function(n){o[n]=num(mp[n])})}return o}
+function aLiquidity(S,dv,date){var rows=[],notes=[];
+  dv.forEach(function(d){var o=src(S,d),r=resolve(o,date);if(!r.k){notes.push(DN[d]+": no report saved"+(date?" for "+fd(date):""));return}var e=o[r.k],b=num(e.bank),c=num(e.cred);
+    rows.push({c:[esc(DN[d])+"<br><small>"+fd(r.k)+"</small>",inr(b),inr(c),c?(b/c).toFixed(2)+"x":"-",'<b>'+inr(b-c)+"</b>"]})});
+  return rows.length?'<div class="hx-h">Liquidity: bank balance against creditors</div>'+tbl(["Division","Bank","Creditors","Cover","Surplus"],rows)+'<div class="hx-s">Cover above 1.00x means the bank balance can clear all creditors today.</div>'+(notes.length?note(notes.join("<br>")):""):"No saved reports yet."}
+function aMovers(S,dv){var rows=[],notes=[],per="";
+  dv.forEach(function(d){var o=src(S,d),ks=keys(o);if(ks.length<2){notes.push(DN[d]+": needs two saved days");return}var k=ks[ks.length-1],p=ks[ks.length-2];per=fd(p)+" to "+fd(k);
+    ["deb","cred"].forEach(function(kind){var a=pmap(o[p],d,kind),b=pmap(o[k],d,kind),seen={};
+      Object.keys(a).concat(Object.keys(b)).forEach(function(n){if(seen[n])return;seen[n]=1;var dl=(b[n]||0)-(a[n]||0);if(Math.round(dl))rows.push({n:n,d:d,kind:kind,dl:dl})})});
+    if(!Object.keys(pmap(o[k],d,"deb")).length&&!Object.keys(pmap(o[k],d,"cred")).length)notes.push(DN[d]+": party-wise detail not saved")});
+  rows.sort(function(a,b){return Math.abs(b.dl)-Math.abs(a.dl)});rows=rows.slice(0,8);
+  return rows.length?'<div class="hx-h">Biggest party movements</div><div class="hx-s">'+per+"</div>"+tbl(["Party","Type","Change"],rows.map(function(x){return{c:[esc(x.n)+" <small>("+(x.d==="air"?"Air":"Lines")+")</small>",x.kind==="deb"?"Debtor":"Creditor",sgn(x.dl,x.kind==="deb")]}}))+(notes.length?note(notes.join("<br>")):""):"No party-level changes found"+(notes.length?note(notes.join("<br>")):".")}
+function aBestWorst(S,dv,t){var w=/lowest|worst|minimum/.test(t),out="",any=false;
+  dv.forEach(function(d){var o=src(S,d),ks=keys(o);if(!ks.length)return;any=true;var b=ks[0];ks.forEach(function(k){if(w?num(o[k].net)<num(o[b].net):num(o[k].net)>num(o[b].net))b=k});
+    var avg=sum(ks.map(function(k){return num(o[k].net)}))/ks.length;
+    out+='<div class="hx-sub">'+DN[d]+"</div>"+tbl(["","Net position"],[{c:[(w?"Lowest":"Highest")+" day \u2022 "+fd(b),"<b>"+inr(o[b].net)+"</b>"]},{c:["Average of "+ks.length+(ks.length===1?" saved day":" saved days"),inr(avg)]},{c:["Latest \u2022 "+fd(ks[ks.length-1]),inr(o[ks[ks.length-1]].net)]}])});
+  return any?out:"No saved reports yet."}
+function aMonth(S,dv,date){var out="",any=false;
+  dv.forEach(function(d){var o=src(S,d),r=resolve(o,date);if(!r.k)return;var ym=r.k.slice(0,7),ks=keys(o).filter(function(k){return k.slice(0,7)===ym&&k<=r.k});if(!ks.length)return;any=true;
+    var f=o[ks[0]],l=o[ks[ks.length-1]],av=function(f2){return sum(ks.map(function(k){return num(o[k][f2])}))/ks.length};
+    out+='<div class="hx-sub">'+DN[d]+" \u2022 "+new Date(ym+"-01T00:00:00").toLocaleString("en-IN",{month:"long",year:"numeric"})+"</div>"+tbl(["","Value"],[
+      {c:["Days saved this month",String(ks.length)]},{c:["Average net position",inr(av("net"))]},{c:["Average bank balance",inr(av("bank"))]},
+      {c:["Net position "+fd(ks[0]).slice(0,5)+" \u2192 "+fd(ks[ks.length-1]).slice(0,5),inr(f.net)+" \u2192 "+inr(l.net)]},{cls:"tot",c:["Change",sgn(num(l.net)-num(f.net),true)]}])});
+  return any?out:"No saved reports yet."}
+function aAlerts(){var a=window.__hubAlerts?window.__hubAlerts():[];
+  return a.length?'<div class="hx-h">Alerts</div>'+a.map(function(x){return"\u2022 "+esc(x.t)}).join("<br>"):"No alerts. Everything looks normal."}
+function aBrief(S,dv){var out=aSummary(S,dv,null),ch=[],a=window.__hubAlerts?window.__hubAlerts():[];
+  dv.forEach(function(d){var o=src(S,d),ks=keys(o);if(ks.length>1){var x=o[ks[ks.length-2]],y=o[ks[ks.length-1]];ch.push(DN[d]+": net "+sgn(num(y.net)-num(x.net),true)+" since "+fd(ks[ks.length-2]))}});
+  if(ch.length)out+='<div class="hx-sub">Since the previous saved day</div>'+ch.join("<br>");
+  if(a.length)out+='<div class="hx-sub">Alerts</div>'+a.map(function(x){return"\u2022 "+esc(x.t)}).join("<br>");return out}
+function aHelp(){return"Hello. I read the reports saved in this hub and answer from them. Try a question below, or type your own, for example:<ul><li>daily brief</li><li>net position on 24-11-2026</li><li>top 10 debtors in Lines</li><li>HDFC balance</li><li>biggest movers</li><li>liquidity</li><li>compare with previous day</li><li>average this month</li></ul>"}
+function route(q){var t=" "+q.toLowerCase().replace(/[?!]+/g," ")+" ",S=load(),dv=divs(t),dt=dates(t),d1=dt.length?dt[dt.length-1]:null,m;
   if(/^\s*(hi|hello|hey|help|menu|hii)\s*$/.test(t)||/what can you do/.test(t))return aHelp();
   if(/(saved|available|which|list).*(date|day|report)s?|how many (days|reports)/.test(t))return aDates(S);
   if(/ageing|aging|overdue/.test(t)||(/customer/.test(t)&&!/debtor|creditor/.test(t)))return aAgeing(S,d1,t);
   if(/\bfn\b|fortnight|payable plan/.test(t))return aFn(S,d1);
+  if(/alert|warning|\brisk/.test(t))return aAlerts();
+  if(/brief|overview|highlight|daily summary|what.?s new/.test(t))return aBrief(S,dv);
+  if(/liquid|coverage|\bcover\b|can we pay|surplus/.test(t))return aLiquidity(S,dv,d1);
+  if(/mover|biggest change|changed most|who changed|what changed/.test(t))return aMovers(S,dv);
   if(/compare|change|difference|versus|\bvs\b|previous|than yesterday|increase|decrease|growth/.test(t))return aCompare(S,dv,dt);
-  if(/trend|history|(last|past)\s*\d+|this week|this month|weekly|monthly/.test(t)){m=/(?:last|past)\s*(\d+)/.exec(t);return aTrend(S,dv,m?+m[1]:7)}
+  if(/average|\bavg\b|month to date|\bmtd\b|this month|monthly/.test(t))return aMonth(S,dv,d1);
+  if(/(highest|lowest|best|worst|peak|maximum|minimum).*(net|position|day)|(net|position).*(highest|lowest|best|worst|peak)/.test(t))return aBestWorst(S,dv,t);
+  if(/trend|history|(last|past)\s*\d+|this week|weekly/.test(t)){m=/(?:last|past)\s*(\d+)/.exec(t);return aTrend(S,dv,m?+m[1]:7)}
   if(/lien|free (cash|balance|fund)/.test(t))return aLien(S,dv,d1);
   if(/debtor|receivable|owes|owed/.test(t))return aParty(S,dv,"deb",d1,t);
   if(/creditor|payable|we owe/.test(t))return aParty(S,dv,"cred",d1,t);
@@ -270,6 +501,13 @@ function answer(q){var t=" "+q.toLowerCase().replace(/[?!]+/g," ")+" ",S=load(),
     if(a.length)return'<div class="hx-h">Matches for \u201c'+esc(tk.join(" "))+"\u201d</div>"+tbl(["Name","Type","Amount"],a.slice(0,10).map(function(x){return{c:[esc(x.n),x.t+(x.d?" <small>("+(x.d==="air"?"Air":"Lines")+")</small>":""),inr(x.v)]}}))}
   return"I couldn\u2019t find that in the saved reports. "+aHelp()}
 
+var lastQ="";
+function answer(q){var t0=q.toLowerCase().trim(),full=q;
+  var fu=lastQ&&(/^(and|also|what about|how about|same for|now)\b/.test(t0)||(t0.split(/\s+/).length<=3&&/^(air|lines?|seaport|\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}|today|yesterday)(\s|$)/.test(t0)));
+  if(fu){var base=lastQ;if(/\bair\b|airpol|\blines?\b|seaport/.test(t0))base=base.replace(/\bair\b|airpol|\blines?\b|seaport|sea port/gi," ");
+    if(dates(t0).length)base=base.replace(/\b\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}\b|\btoday\b|\byesterday\b/gi," ");full=base+" "+q}
+  var r=route(full);if(!/^I couldn\u2019t find/.test(r))lastQ=full;return r}
+
 /* ---------- panel UI ---------- */
 var CSS="#hxH{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147481000;width:26px;padding:14px 0;border:0;border-radius:10px 0 0 10px;background:#071a33;color:#fff;cursor:pointer;box-shadow:-2px 2px 10px rgba(0,0,0,.28);border-left:3px solid #ff7a18;writing-mode:vertical-rl;text-orientation:mixed;font:700 11px/1 Montserrat,'Segoe UI',Arial,sans-serif;letter-spacing:.14em;opacity:.55;transition:opacity .2s,width .2s}#hxH:hover,#hxH:focus-visible{opacity:1;width:32px}#hxH i{position:absolute;top:6px;left:50%;margin-left:-4px;width:8px;height:8px;border-radius:50%;background:#e04545;display:none}#hxH.un i{display:block}"+
 "#hxP{position:fixed;top:0;right:0;bottom:0;z-index:2147481500;width:min(400px,100vw);background:#fff;box-shadow:-8px 0 30px rgba(7,26,51,.35);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .25s ease;font:13px/1.45 Montserrat,'Segoe UI',Arial,sans-serif;color:#1b2a41}#hxP.on{transform:none}@media(prefers-reduced-motion:reduce){#hxP{transition:none}}"+
@@ -280,7 +518,7 @@ var CSS="#hxH{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:
 "#hxQ{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#fff;border-top:1px solid #e3eaf4}#hxQ button{flex:none;border:1px solid #c9d6ea;background:#fff;border-radius:99px;padding:5px 11px;font:600 11.5px inherit;color:#34496b;cursor:pointer}#hxQ button:hover{background:#eef3f9}"+
 "#hxP form{display:flex;gap:6px;padding:10px;border-top:1px solid #e3eaf4;background:#fff}#hxP input{flex:1;border:1px solid #c9d6ea;border-radius:10px;padding:10px;font:inherit}#hxP form button{border:0;border-radius:10px;background:#ff7a18;color:#1a1206;font-weight:800;padding:0 14px;cursor:pointer}#hxP [hidden]{display:none!important}"+
 "body.pres #hxH,body.pres #hxP{display:none!important}@media print{#hxH,#hxP{display:none!important}}";
-var QS=["Net position","Bank balance","Top debtors","Top creditors","Compare with previous day","Last 7 days trend","Saved dates"];
+var QS=["Daily brief","Net position","Alerts","Liquidity","Biggest movers","Bank balance","Top debtors","Top creditors","Compare with previous day","Last 7 days trend"];
 var st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
 var H=document.createElement("button");H.id="hxH";H.type="button";H.title="Open assistant (Alt+A)";H.setAttribute("aria-label","Open assistant");H.innerHTML="ASSISTANT<i></i>";
 var P=document.createElement("aside");P.id="hxP";P.setAttribute("role","dialog");P.setAttribute("aria-label","Hub assistant");
@@ -300,7 +538,7 @@ document.addEventListener("keydown",function(e){if(e.altKey&&!e.ctrlKey&&!e.meta
 
 /* ---------- Team Chat tab (uses the same Supabase sign-in as the sync layer) ---------- */
 var last=0,first=true,timer,T=$("hxT");
-function api(){return window.__SBAPI||null}
+function api(){var b=window.__SB;return b&&b.chat?{me:{uid:b.uid,email:b.email},req:b.req}:null}
 function chatReady(){var a=api();T.querySelector('[data-t="c"]').hidden=!a;return a}
 function cadd(m,me){var d=document.createElement("div"),s=document.createElement("small");d.className="m"+(m.user_id===me?" me":"");s.className="w";
   s.textContent=m.user_name+" \u2022 "+new Date(m.created_at).toLocaleString([],{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});d.appendChild(s);d.appendChild(document.createTextNode(m.body));CL.appendChild(d)}
