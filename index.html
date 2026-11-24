@@ -28,9 +28,9 @@
 (function(){
 "use strict";
 /* ---- SETTINGS: edit these 3 lines only ---- */
-var SUPABASE_URL="https://lmzlacmulfasesblivlp.supabase.co"
-var SUPABASE_KEY="sb_publishable_DjHxrQAp1-qtew-1U-DxBg_FUClVM0D ";
-var ENABLE_CHAT=false;   /* true = show the optional team chat button */
+var SUPABASE_URL="https://lmzlacmulfasesblivlp.supabase.co";
+var SUPABASE_KEY="YOUR-ANON-OR-PUBLISHABLE-KEY";
+var ENABLE_CHAT=true;    /* true = Team Chat tab inside the assistant panel */
 /* ------------------------------------------- */
 if(/YOUR-/.test(SUPABASE_URL+SUPABASE_KEY)){console.warn("Supabase not configured: running local-only.");return}
 var LOCAL_ONLY={"hub.pin":1,"hub.last":1,"hub.lastBackup":1,"hub.sbInit":1};
@@ -138,29 +138,6 @@ function poll(){if(!authed||busy)return;
       try{window.__hubDashRefresh&&window.__hubDashRefresh()}catch(e){}}})
   .catch(function(e){if(e&&e.message==="auth")authLost()})}
 
-/* ---------- optional team chat ---------- */
-function chat(){var st=document.createElement("style");
-  st.textContent="#sbChatBtn{position:fixed;right:18px;bottom:78px;z-index:2147482000;width:48px;height:48px;border-radius:50%;border:0;background:#071a33;color:#fff;font-size:21px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}#sbChatBtn b{position:absolute;top:-4px;right:-4px;background:#e04545;color:#fff;font:800 11px sans-serif;border-radius:99px;padding:2px 6px}#sbChat{position:fixed;right:18px;bottom:134px;z-index:2147482000;width:min(340px,calc(100vw - 36px));height:420px;max-height:70vh;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:none;flex-direction:column;overflow:hidden;font:13px Montserrat,'Segoe UI',Arial,sans-serif}#sbChat.on{display:flex}#sbChat header{background:#071a33;color:#fff;padding:10px 14px;font-weight:800}#sbCL{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:#f4f7fb}#sbCL div{max-width:85%;padding:7px 10px;border-radius:10px;background:#fff;border:1px solid #dde6f2;color:#1b2a41;word-wrap:break-word}#sbCL div.me{align-self:flex-end;background:#ffe8d4;border-color:#ffd2ab}#sbCL small{display:block;color:#6b7a93;font-size:10.5px;margin-bottom:2px}#sbChat form{display:flex;gap:6px;padding:8px;border-top:1px solid #e3eaf4}#sbChat input{flex:1;border:1px solid #c9d6ea;border-radius:8px;padding:8px;font:inherit}#sbChat button{border:0;border-radius:8px;background:#ff7a18;color:#1a1206;font-weight:800;padding:0 12px;cursor:pointer}";
-  document.head.appendChild(st);
-  var btn=document.createElement("button");btn.id="sbChatBtn";btn.type="button";btn.title="Team chat";btn.innerHTML="\uD83D\uDCAC<b hidden></b>";
-  var box=document.createElement("div");box.id="sbChat";box.innerHTML='<header>Team chat</header><div id="sbCL"></div><form><input id="sbCI" maxlength="1000" placeholder="Type a message" autocomplete="off"><button type="submit">Send</button></form>';
-  document.body.appendChild(btn);document.body.appendChild(box);
-  var list=box.querySelector("#sbCL"),inp=box.querySelector("#sbCI"),badge=btn.querySelector("b"),last=0,unread=0,first=true,me=(sess&&sess.uid)||"",nm=((sess&&sess.email)||"user").split("@")[0],t;
-  function add(m){var d=document.createElement("div"),s=document.createElement("small");if(m.user_id===me)d.className="me";
-    s.textContent=m.user_name+" \u2022 "+new Date(m.created_at).toLocaleString([], {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
-    d.appendChild(s);d.appendChild(document.createTextNode(m.body));list.appendChild(d)}
-  function load(){if(!authed)return schedule();
-    ensureToken().then(function(){return asyncReq("GET","/rest/v1/chat_messages?select=id,user_id,user_name,body,created_at&"+(first?"order=id.desc&limit=50":"order=id.asc&id=gt."+last+"&limit=200"))})
-    .then(function(r){if(r.status!==200)return;var rows=JSON.parse(r.text);if(first)rows.reverse();
-      rows.forEach(function(m){add(m);if(m.id>last)last=m.id;if(!first&&!box.classList.contains("on")&&m.user_id!==me)unread++});
-      if(rows.length&&box.classList.contains("on"))list.scrollTop=list.scrollHeight;
-      first=false;badge.hidden=!unread;badge.textContent=unread}).catch(function(){}).then(schedule)}
-  function schedule(){clearTimeout(t);t=setTimeout(load,box.classList.contains("on")?3000:20000)}
-  btn.onclick=function(){box.classList.toggle("on");if(box.classList.contains("on")){unread=0;badge.hidden=true;list.scrollTop=list.scrollHeight;inp.focus();load()}};
-  box.querySelector("form").onsubmit=function(e){e.preventDefault();var v=inp.value.trim();if(!v)return;inp.value="";
-    ensureToken().then(function(){return asyncReq("POST","/rest/v1/chat_messages",{user_name:nm,body:v},{Prefer:"return=minimal"})}).then(load).catch(function(){inp.value=v})};
-  load()}
-
 /* ---------- start ---------- */
 if(!sess||!sess.refresh_token){loginUI();return}
 if(expired(sess)){sess=refreshSync();if(!sess){loginUI("Please sign in.");return}}
@@ -171,9 +148,179 @@ if(h==="fail"){offline=true;status("Offline - using this device's copy","bad");t
 else{status("Synced \u2022 "+(sess.email||""));flush()}
 setInterval(poll,POLL_MS);
 document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();flush()}});
-if(ENABLE_CHAT)chat();
+if(ENABLE_CHAT)window.__SBAPI={me:{uid:sess.uid||"",email:sess.email||""},req:function(m,p,b,x){return ensureToken().then(function(){return asyncReq(m,p,b,x)})}};
 })();
 /* ===== END SUPABASE SYNC LAYER ===== */
+</script>
+<script>
+/* ===== HUB ASSISTANT: hidden side panel with Data Assistant + Team Chat (added; existing hub code is untouched) ===== */
+(function(){
+"use strict";
+var LK="lin.hist.v1",AK="sfr.hist.v1",FK="fnp.hist.v1",GK="cag.hist.v1";
+function lsj(k){try{var v=JSON.parse(localStorage.getItem(k)||"{}");return v&&typeof v==="object"?v:{}}catch(e){return{}}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function num(x){return+x||0}
+function inr(n){n=Math.round(+n||0);var g=n<0,s=String(Math.abs(n)),l=s.slice(-3),r=s.slice(0,-3);if(r)l=r.replace(/\B(?=(\d{2})+(?!\d))/g,",")+","+l;return(g?"-":"")+"\u20b9"+l}
+function lac(n){var a=Math.abs(n),s=n<0?"-":"";return a>=1e7?s+(a/1e7).toFixed(2)+" Cr":s+(a/1e5).toFixed(2)+" L"}
+function fd(k){var p=String(k).split("-");return p.length===3?p[2]+"-"+p[1]+"-"+p[0]:k}
+function pad(n){return(n<10?"0":"")+n}
+function isoOf(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function keys(o){return Object.keys(o).filter(function(k){return/^\d{4}-\d{2}-\d{2}$/.test(k)}).sort()}
+function sum(a){return a.reduce(function(x,y){return x+y},0)}
+function money(n){return"<b>"+inr(n)+"</b> <small>("+lac(n)+")</small>"}
+function sgn(n,goodUp){var d=Math.round(n);if(!d)return'<span class="hx-n">no change</span>';return'<span class="'+((d>0)===goodUp?"hx-g":"hx-b")+'">'+(d>0?"\u25B2 ":"\u25BC ")+inr(Math.abs(d))+"</span>"}
+function tbl(head,rows){return'<div class="hx-tw"><table><thead><tr>'+head.map(function(h,i){return"<th"+(i?' class="r"':"")+">"+esc(h)+"</th>"}).join("")+"</tr></thead><tbody>"+rows.map(function(r){return"<tr"+(r.cls?' class="'+r.cls+'"':"")+">"+r.c.map(function(c,i){return"<td"+(i?' class="r"':"")+">"+c+"</td>"}).join("")+"</tr>"}).join("")+"</tbody></table></div>"}
+function note(t){return'<div class="hx-note">'+t+"</div>"}
+
+/* ---------- reading the hub data ---------- */
+function load(){return{L:lsj(LK),A:lsj(AK),F:lsj(FK),G:lsj(GK)}}
+function resolve(o,date){var ks=keys(o);if(date){if(o[date])return{k:date};var b=ks.filter(function(k){return k<date});return{k:null,near:b.length?b[b.length-1]:null}}return{k:ks.length?ks[ks.length-1]:null}}
+var DN={air:"Air Division",lines:"Seaport Lines"};
+function src(S,dv){return dv==="air"?S.A:S.L}
+function divs(t){var a=/\bair\b|airpol/.test(t),l=/\blines?\b|seaport|sea port/.test(t);return a&&!l?["air"]:l&&!a?["lines"]:["air","lines"]}
+function dates(t){var out=[],m,re=/\b(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})\b/g;
+  while((m=re.exec(t))){var y=+m[3];if(y<100)y+=2000;out.push(y+"-"+pad(+m[2])+"-"+pad(+m[1]))}
+  re=/\b\d{4}-\d{2}-\d{2}\b/g;while((m=re.exec(t)))out.push(m[0]);
+  if(/\btoday\b/.test(t))out.push(isoOf(new Date()));
+  if(/\byesterday\b/.test(t)){var d=new Date();d.setDate(d.getDate()-1);out.push(isoOf(d))}
+  return out.filter(function(x,i){return out.indexOf(x)===i})}
+var STOP=("the what whats is are was show me give tell about of for on in at to and or a an my our please pls total top list all bank banks balance balances debtor debtors creditor creditors net position report reports summary status air lines line division date today yesterday latest last compare trend days day how much many who owes owed lien free customer customers ageing aging outstanding payable fn fortnight biggest largest highest major with from this that it do does can you i we us amount amounts details detail view see check").split(" ");
+function toks(t){return t.replace(/[^a-z0-9 ]+/g," ").split(/\s+/).filter(function(w){return w.length>2&&STOP.indexOf(w)<0&&!/^\d+$/.test(w)})}
+function hit(name,tk){if(!tk.length)return true;var n=String(name||"").toLowerCase();return tk.every(function(w){return n.indexOf(w)>=0})}
+
+/* ---------- answers ---------- */
+function aSummary(S,dv,date){var rows=[],notes=[],ks={};
+  dv.forEach(function(d){var o=src(S,d),r=resolve(o,date);
+    if(!r.k){notes.push(DN[d]+": "+(date?"no report saved for "+fd(date)+(r.near?" (nearest earlier day: "+fd(r.near)+")":""):"no report saved yet"));return}
+    var e=o[r.k];ks[d]=r.k;rows.push({nm:DN[d],k:r.k,bank:num(e.bank),deb:num(e.deb),cred:num(e.cred),net:num(e.net)})});
+  if(!rows.length)return notes.join("<br>")||"There are no saved financial reports yet.";
+  var out='<div class="hx-h">Net position</div>',c=rows.map(function(r){return{c:[esc(r.nm)+"<br><small>"+fd(r.k)+"</small>",inr(r.bank),inr(r.deb),inr(r.cred),"<b>"+inr(r.net)+"</b>"]}});
+  if(rows.length>1){if(rows[0].k===rows[1].k){var t={bank:0,deb:0,cred:0,net:0};rows.forEach(function(r){for(var q in t)t[q]+=r[q]});c.push({cls:"tot",c:["Combined",inr(t.bank),inr(t.deb),inr(t.cred),"<b>"+inr(t.net)+"</b>"]})}
+    else notes.push("Air and Lines are on different dates, so there is no combined total.")}
+  out+=tbl(["Division","Bank","Debtors","Creditors","Net"],c);
+  return out+(notes.length?note(notes.join("<br>")):"")}
+function aCompare(S,dv,dts){var out='<div class="hx-h">Change between two saved days</div>',any=false,notes=[];
+  dv.forEach(function(d){var o=src(S,d),ks=keys(o),a,b;
+    if(dts.length>=2){a=dts[0]<dts[1]?dts[0]:dts[1];b=dts[0]<dts[1]?dts[1]:dts[0]}
+    else if(dts.length===1){b=dts[0];var p=ks.filter(function(k){return k<b});a=p.length?p[p.length-1]:null}
+    else{b=ks[ks.length-1];a=ks[ks.length-2]}
+    if(!a||!b||!o[a]||!o[b]){notes.push(DN[d]+": need two saved days to compare"+(dts.length?" (check the dates)":""));return}
+    any=true;var x=o[a],y=o[b];
+    out+="<div class=\"hx-sub\">"+DN[d]+" \u2022 "+fd(a)+" \u2192 "+fd(b)+"</div>"+tbl(["","Before","Now","Change"],[
+      {c:["Bank",inr(x.bank),inr(y.bank),sgn(num(y.bank)-num(x.bank),true)]},
+      {c:["Debtors",inr(x.deb),inr(y.deb),sgn(num(y.deb)-num(x.deb),true)]},
+      {c:["Creditors",inr(x.cred),inr(y.cred),sgn(num(y.cred)-num(x.cred),false)]},
+      {cls:"tot",c:["Net",inr(x.net),inr(y.net),sgn(num(y.net)-num(x.net),true)]}])});
+  return(any?out:"")+(notes.length?note(notes.join("<br>")):"")||"Nothing to compare yet."}
+function aTrend(S,dv,n){n=Math.max(2,Math.min(31,n||7));var out="",any=false;
+  dv.forEach(function(d){var o=src(S,d),ks=keys(o).slice(-n);if(!ks.length)return;any=true;
+    var mx=Math.max.apply(null,ks.map(function(k){return Math.abs(num(o[k].net))}).concat(1));
+    out+='<div class="hx-sub">'+DN[d]+" \u2022 last "+ks.length+(ks.length===1?" saved day":" saved days")+"</div>"+tbl(["Date","Net","Bank","Debtors","Creditors"],ks.map(function(k){var e=o[k];return{c:[fd(k),'<b>'+inr(e.net)+'</b><i class="hx-bar" style="width:'+Math.round(Math.abs(num(e.net))/mx*60)+'px"></i>',inr(e.bank),inr(e.deb),inr(e.cred)]}}))});
+  return any?out:"No saved reports to show a trend."}
+function party(S,dv,kind,date,tk){var items=[],notes=[];
+  dv.forEach(function(d){var o=src(S,d),r=resolve(o,date);if(!r.k)return;var e=o[r.k];
+    if(d==="lines"){var m=e.m&&e.m[kind];if(m)m.forEach(function(x){if(num(x.tot)!==0)items.push({n:x.n||x.name||"-",v:num(x.tot),d:d,k:r.k})});else notes.push("Lines: party-wise detail not saved for "+fd(r.k))}
+    else{var mp=e[kind==="deb"?"dc":"cc"];if(mp&&typeof mp==="object")Object.keys(mp).forEach(function(n){if(num(mp[n])!==0)items.push({n:n,v:num(mp[n]),d:d,k:r.k})});else notes.push("Air: party-wise detail is saved from the next time the Air report is pasted")}});
+  return{items:items.filter(function(x){return hit(x.n,tk)}).sort(function(a,b){return b.v-a.v}),notes:notes}}
+function aParty(S,dv,kind,date,t){var tk=toks(t),m=/top\s*(\d+)/.exec(t),n=m?Math.min(30,+m[1]):(tk.length?10:5),r=party(S,dv,kind,date,tk),both=dv.length>1,lab=kind==="deb"?"Debtors":"Creditors";
+  if(!r.items.length)return(tk.length?"No "+lab.toLowerCase()+" matched \u201c"+esc(tk.join(" "))+"\u201d.":"No "+lab.toLowerCase()+" detail saved.")+(r.notes.length?note(r.notes.join("<br>")):"");
+  var tot=sum(r.items.map(function(x){return x.v})),L=r.items.slice(0,n);
+  return'<div class="hx-h">'+(tk.length?lab+" matching \u201c"+esc(tk.join(" "))+"\u201d":"Top "+L.length+" "+lab.toLowerCase())+"</div>"+tbl(["Party","Amount","Share"],L.map(function(x){return{c:[esc(x.n)+(both?" <small>("+(x.d==="air"?"Air":"Lines")+")</small>":""),inr(x.v),(tot?(x.v/tot*100).toFixed(1):"0.0")+"%"]}}))+'<div class="hx-s">Total listed '+inr(tot)+" \u2022 "+fd(r.items[0].k)+"</div>"+(r.notes.length?note(r.notes.join("<br>")):"")}
+function aBank(S,dv,date,t){var tk=toks(t),out="",any=false;
+  dv.forEach(function(d){if(tk.length&&d==="air")return;var o=src(S,d),r=resolve(o,date);if(!r.k)return;var e=o[r.k];any=true;
+    out+='<div class="hx-sub">'+DN[d]+" \u2022 "+fd(r.k)+"</div>";
+    if(d==="lines"&&e.m&&e.m.bank&&e.m.bank.length){var rows=e.m.bank.filter(function(b){return hit(b.name+" "+(b.div||""),tk)});
+      out+=rows.length?tbl(["Bank","Division","Amount"],rows.map(function(b){return{c:[esc(b.name||"-"),esc(b.div||""),inr(b.amt)]}}).concat(tk.length?[]:[{cls:"tot",c:["Total bank balance","",inr(e.bank)]}])):"No bank row matched.";}
+    else out+=tbl(["","Amount"],[{c:["Total bank balance",inr(e.bank)]}].concat(d==="air"&&(e.lien||e.free)?[{c:["Lien amount",inr(e.lien)]},{c:["Free balance",inr(e.free)]}]:[]))});
+  return any?out:"No saved reports yet."}
+function bankHit(S,dv,date,tk){return dv.some(function(d){if(d!=="lines")return false;var r=resolve(S.L,date);var e=r.k&&S.L[r.k];return!!(e&&e.m&&e.m.bank&&e.m.bank.some(function(b){return hit(b.name+" "+(b.div||""),tk)}))})}
+function aLien(S,dv,date){var out="",any=false;
+  dv.forEach(function(d){var o=src(S,d),r=resolve(o,date);if(!r.k)return;var e=o[r.k],l=0,f=null;
+    if(d==="air"){l=num(e.lien);f=e.free==null?null:num(e.free)}
+    else if(e.m&&e.m.bank){l=sum(e.m.bank.filter(function(b){return b.lien}).map(function(b){return num(b.amt)}));f=num(e.bank)-l}
+    any=true;out+='<div class="hx-sub">'+DN[d]+" \u2022 "+fd(r.k)+"</div>"+tbl(["","Amount"],[{c:["Bank balance",inr(e.bank)]},{c:["Lien amount",inr(l)]},{cls:"tot",c:["Free balance",f==null?"-":inr(f)]}])});
+  return any?out:"No saved reports yet."}
+function aAgeing(S,date,t){var tk=toks(t),r=resolve(S.G,date);if(!r.k)return"No Customer Ageing report saved"+(date?" for "+fd(date):"")+".";
+  var e=S.G[r.k],rows=e.rows||(e.m&&e.m.rows)||[];if(!rows.length)return"A Customer Ageing report is saved for "+fd(r.k)+", but customer-wise rows are not in the saved data.";
+  var f=rows.filter(function(x){return hit(x.n||x.name||x.cust||"",tk)});if(!f.length)return"No customer matched \u201c"+esc(tk.join(" "))+"\u201d.";
+  var tot=sum(f.map(function(x){return num(x.net)})),neg=f.filter(function(x){return num(x.net)<0}).length,top=f.slice().sort(function(a,b){return num(b.net)-num(a.net)}).slice(0,tk.length?10:5);
+  return'<div class="hx-h">Customer ageing \u2022 '+fd(r.k)+"</div>"+tbl(["Customer","Net outstanding"],top.map(function(x){return{c:[esc(x.n||x.name||x.cust||"-"),inr(x.net)]}}))+'<div class="hx-s">'+f.length+" customers \u2022 total net "+inr(tot)+(neg?" \u2022 "+neg+" with credit balance":"")+"</div>"}
+function aFn(S,date){var r=resolve(S.F,date);if(!r.k)return"No FN Payable plan saved yet.";var e=S.F[r.k],c=e.cats||{},ks=Object.keys(c);
+  if(!ks.length)return"FN Payable saved for "+fd(r.k)+" has no category detail.";
+  return'<div class="hx-h">FN payable \u2022 '+esc(e.remit||fd(r.k))+"</div>"+tbl(["Category","Payable"],ks.map(function(k){return{c:[esc(k),inr(c[k])]}}).concat([{cls:"tot",c:["Total",inr(sum(ks.map(function(k){return num(c[k])})))]}]))}
+function aDates(S){var rows=[["Financial - Air",S.A],["Financial - Lines",S.L],["FN Payable",S.F],["Customer Ageing",S.G]].map(function(p){var ks=keys(p[1]);return{c:[p[0],String(ks.length),ks.length?fd(ks[0])+" to "+fd(ks[ks.length-1]):"-"]}});
+  return'<div class="hx-h">Saved reports</div>'+tbl(["Report","Days","Range"],rows)}
+function aHelp(){return"Hello. I read the reports saved in this hub and answer from them. Try one of the questions below, or type your own, for example:<ul><li>net position on 24-11-2026</li><li>top 10 debtors in Lines</li><li>HDFC balance</li><li>compare with previous day</li><li>last 14 days trend</li></ul>"}
+function answer(q){var t=" "+q.toLowerCase().replace(/[?!]+/g," ")+" ",S=load(),dv=divs(t),dt=dates(t),d1=dt.length?dt[dt.length-1]:null,m;
+  if(/^\s*(hi|hello|hey|help|menu|hii)\s*$/.test(t)||/what can you do/.test(t))return aHelp();
+  if(/(saved|available|which|list).*(date|day|report)s?|how many (days|reports)/.test(t))return aDates(S);
+  if(/ageing|aging|overdue/.test(t)||(/customer/.test(t)&&!/debtor|creditor/.test(t)))return aAgeing(S,d1,t);
+  if(/\bfn\b|fortnight|payable plan/.test(t))return aFn(S,d1);
+  if(/compare|change|difference|versus|\bvs\b|previous|than yesterday|increase|decrease|growth/.test(t))return aCompare(S,dv,dt);
+  if(/trend|history|(last|past)\s*\d+|this week|this month|weekly|monthly/.test(t)){m=/(?:last|past)\s*(\d+)/.exec(t);return aTrend(S,dv,m?+m[1]:7)}
+  if(/lien|free (cash|balance|fund)/.test(t))return aLien(S,dv,d1);
+  if(/debtor|receivable|owes|owed/.test(t))return aParty(S,dv,"deb",d1,t);
+  if(/creditor|payable|we owe/.test(t))return aParty(S,dv,"cred",d1,t);
+  var tk0=toks(t);
+  if(/bank/.test(t)||(tk0.length&&bankHit(S,dv,d1,tk0)))return aBank(S,dv,d1,t);
+  if(/net|position|summary|status|report|total|overall|balance|today|latest|financial/.test(t))return aSummary(S,dv,d1);
+  var tk=toks(t);if(tk.length){var a=party(S,dv,"deb",d1,tk).items.map(function(x){x.t="Debtor";return x}).concat(party(S,dv,"cred",d1,tk).items.map(function(x){x.t="Creditor";return x}));
+    var g=S.G&&resolve(S.G,d1).k,rows=g?(S.G[g].rows||(S.G[g].m&&S.G[g].m.rows)||[]):[];
+    rows.forEach(function(x){if(hit(x.n||x.name||x.cust||"",tk))a.push({n:x.n||x.name||x.cust,v:num(x.net),t:"Customer (ageing)",d:"",k:g})});
+    if(a.length)return'<div class="hx-h">Matches for \u201c'+esc(tk.join(" "))+"\u201d</div>"+tbl(["Name","Type","Amount"],a.slice(0,10).map(function(x){return{c:[esc(x.n),x.t+(x.d?" <small>("+(x.d==="air"?"Air":"Lines")+")</small>":""),inr(x.v)]}}))}
+  return"I couldn\u2019t find that in the saved reports. "+aHelp()}
+
+/* ---------- panel UI ---------- */
+var CSS="#hxH{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147481000;width:26px;padding:14px 0;border:0;border-radius:10px 0 0 10px;background:#071a33;color:#fff;cursor:pointer;box-shadow:-2px 2px 10px rgba(0,0,0,.28);border-left:3px solid #ff7a18;writing-mode:vertical-rl;text-orientation:mixed;font:700 11px/1 Montserrat,'Segoe UI',Arial,sans-serif;letter-spacing:.14em;opacity:.55;transition:opacity .2s,width .2s}#hxH:hover,#hxH:focus-visible{opacity:1;width:32px}#hxH i{position:absolute;top:6px;left:50%;margin-left:-4px;width:8px;height:8px;border-radius:50%;background:#e04545;display:none}#hxH.un i{display:block}"+
+"#hxP{position:fixed;top:0;right:0;bottom:0;z-index:2147481500;width:min(400px,100vw);background:#fff;box-shadow:-8px 0 30px rgba(7,26,51,.35);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .25s ease;font:13px/1.45 Montserrat,'Segoe UI',Arial,sans-serif;color:#1b2a41}#hxP.on{transform:none}@media(prefers-reduced-motion:reduce){#hxP{transition:none}}"+
+"#hxP header{background:linear-gradient(135deg,#071a33,#0d2b52);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:3px solid #ff7a18}#hxP header b{flex:1;font-size:14px;letter-spacing:.02em}#hxP header b span{color:#ff7a18}#hxP header button{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:16px}"+
+"#hxT{display:flex;background:#eef3f9;border-bottom:1px solid #dbe5f2}#hxT button{flex:1;border:0;background:none;padding:10px;font:700 12px inherit;color:#5b6b86;cursor:pointer;border-bottom:2px solid transparent}#hxT button.on{color:#071a33;border-color:#ff7a18;background:#fff}#hxT button[hidden]{display:none}"+
+"#hxL,#hxCL{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f4f7fb}#hxL .m,#hxCL .m{max-width:92%;padding:9px 11px;border-radius:12px;background:#fff;border:1px solid #dde6f2;word-wrap:break-word}#hxL .u,#hxCL .me{align-self:flex-end;background:#ffe8d4;border-color:#ffd2ab}#hxCL small.w{display:block;color:#6b7a93;font-size:10.5px;margin-bottom:2px}"+
+"#hxL ul{margin:6px 0 0;padding-left:18px}.hx-h{font-weight:800;color:#071a33;margin-bottom:6px}.hx-sub{font-weight:700;color:#0d2b52;margin:8px 0 4px;font-size:12px}.hx-s{color:#5b6b86;font-size:11.5px;margin-top:5px}.hx-note{margin-top:7px;padding:6px 8px;border-radius:8px;background:#fff6ea;color:#8a5200;font-size:11.5px}.hx-tw{overflow-x:auto}#hxL table{border-collapse:collapse;width:100%;font-size:12px}#hxL th{background:#eef3f9;color:#34496b;text-align:left;padding:5px 6px;font-size:11px}#hxL td{padding:5px 6px;border-top:1px solid #edf1f7;vertical-align:top}#hxL .r{text-align:right;white-space:nowrap}#hxL tr.tot td{background:#f4f7fb;font-weight:800}#hxL small{color:#6b7a93}.hx-g{color:#1a8a47;font-weight:700}.hx-b{color:#c0392b;font-weight:700}.hx-n{color:#6b7a93}.hx-bar{display:inline-block;height:6px;border-radius:3px;background:#1b75bb;margin-left:6px;vertical-align:middle}"+
+"#hxQ{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#fff;border-top:1px solid #e3eaf4}#hxQ button{flex:none;border:1px solid #c9d6ea;background:#fff;border-radius:99px;padding:5px 11px;font:600 11.5px inherit;color:#34496b;cursor:pointer}#hxQ button:hover{background:#eef3f9}"+
+"#hxP form{display:flex;gap:6px;padding:10px;border-top:1px solid #e3eaf4;background:#fff}#hxP input{flex:1;border:1px solid #c9d6ea;border-radius:10px;padding:10px;font:inherit}#hxP form button{border:0;border-radius:10px;background:#ff7a18;color:#1a1206;font-weight:800;padding:0 14px;cursor:pointer}#hxP [hidden]{display:none!important}"+
+"body.pres #hxH,body.pres #hxP{display:none!important}@media print{#hxH,#hxP{display:none!important}}";
+var QS=["Net position","Bank balance","Top debtors","Top creditors","Compare with previous day","Last 7 days trend","Saved dates"];
+var st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
+var H=document.createElement("button");H.id="hxH";H.type="button";H.title="Open assistant (Alt+A)";H.setAttribute("aria-label","Open assistant");H.innerHTML="ASSISTANT<i></i>";
+var P=document.createElement("aside");P.id="hxP";P.setAttribute("role","dialog");P.setAttribute("aria-label","Hub assistant");
+P.innerHTML='<header><b>SEAPOL <span>ASSISTANT</span></b><button type="button" id="hxX" aria-label="Close">\u2715</button></header><div id="hxT"><button type="button" class="on" data-t="a">Data Assistant</button><button type="button" data-t="c" hidden>Team Chat</button></div>'+
+'<div id="hxL"></div><div id="hxQ"></div><div id="hxCL" hidden></div><form id="hxF"><input id="hxI" autocomplete="off" maxlength="300" placeholder="Ask about the saved reports"><button type="submit">Send</button></form>';
+document.body.appendChild(H);document.body.appendChild(P);
+function $(i){return document.getElementById(i)}
+var L=$("hxL"),Q=$("hxQ"),CL=$("hxCL"),I=$("hxI"),tab="a";
+function bub(h,u){var d=document.createElement("div");d.className="m"+(u?" u":"");if(u)d.textContent=h;else d.innerHTML=h;L.appendChild(d);L.scrollTop=L.scrollHeight}
+Q.innerHTML=QS.map(function(q){return'<button type="button">'+q+"</button>"}).join("");
+Q.onclick=function(e){if(e.target.tagName==="BUTTON")ask(e.target.textContent)};
+function ask(q){q=(q||"").trim();if(!q)return;bub(q,true);var r;try{r=answer(q)}catch(e){r="Sorry, I could not read the saved data for that question."}bub(r)}
+bub(aHelp());
+function open(on){chatReady();P.classList.toggle("on",on);H.style.display=on?"none":"";if(on){H.classList.remove("un");I.focus();if(tab==="c"){loadChat();L.scrollTop=L.scrollHeight}}else{H.focus&&H.focus()}}
+H.onclick=function(){open(true)};$("hxX").onclick=function(){open(false)};
+document.addEventListener("keydown",function(e){if(e.altKey&&!e.ctrlKey&&!e.metaKey&&(e.key==="a"||e.key==="A")){e.preventDefault();open(!P.classList.contains("on"))}else if(e.key==="Escape"&&P.classList.contains("on"))open(false)});
+
+/* ---------- Team Chat tab (uses the same Supabase sign-in as the sync layer) ---------- */
+var last=0,first=true,timer,T=$("hxT");
+function api(){return window.__SBAPI||null}
+function chatReady(){var a=api();T.querySelector('[data-t="c"]').hidden=!a;return a}
+function cadd(m,me){var d=document.createElement("div"),s=document.createElement("small");d.className="m"+(m.user_id===me?" me":"");s.className="w";
+  s.textContent=m.user_name+" \u2022 "+new Date(m.created_at).toLocaleString([],{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});d.appendChild(s);d.appendChild(document.createTextNode(m.body));CL.appendChild(d)}
+function loadChat(){var a=api();clearTimeout(timer);if(!a)return;
+  a.req("GET","/rest/v1/chat_messages?select=id,user_id,user_name,body,created_at&"+(first?"order=id.desc&limit=50":"order=id.asc&id=gt."+last+"&limit=200")).then(function(r){
+    if(r.status!==200)return;var rows=JSON.parse(r.text);if(first)rows.reverse();var fresh=false;
+    rows.forEach(function(m){cadd(m,a.me.uid);if(m.id>last)last=m.id;if(!first&&m.user_id!==a.me.uid)fresh=true});
+    if(rows.length)CL.scrollTop=CL.scrollHeight;
+    if(fresh&&!(P.classList.contains("on")&&tab==="c"))H.classList.add("un");first=false}).catch(function(){}).then(function(){timer=setTimeout(loadChat,P.classList.contains("on")&&tab==="c"?3000:20000)})}
+function setTab(t){tab=t;[].forEach.call(T.querySelectorAll("button"),function(b){b.classList.toggle("on",b.dataset.t===t)});
+  L.hidden=Q.hidden=t==="c";CL.hidden=t!=="c";I.placeholder=t==="c"?"Message your team":"Ask about the saved reports";
+  if(t==="c"){loadChat();CL.scrollTop=CL.scrollHeight}I.focus()}
+T.onclick=function(e){var b=e.target.closest("button");if(b&&!b.hidden)setTab(b.dataset.t)};
+$("hxF").onsubmit=function(e){e.preventDefault();var v=I.value.trim();if(!v)return;I.value="";
+  if(tab==="a"){ask(v);return}
+  var a=api();if(!a)return;a.req("POST","/rest/v1/chat_messages",{user_name:(a.me.email||"user").split("@")[0],body:v},{Prefer:"return=minimal"}).then(function(r){if(r.status>=200&&r.status<300)loadChat();else I.value=v}).catch(function(){I.value=v})};
+/* the sync layer signs in before the hub starts, so the chat can be checked right away and the unread dot works while closed */
+setTimeout(function(){if(chatReady())loadChat()},1500);
+})();
+/* ===== END HUB ASSISTANT ===== */
 </script>
 <script>
 (function(){
